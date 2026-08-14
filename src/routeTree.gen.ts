@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AccountRouteImport } from './routes/account'
+import { Route as AdminRouteImport } from './routes/admin'
 import { Route as CartRouteImport } from './routes/cart'
 import { Route as CategoriesRouteImport } from './routes/categories'
 import { Route as CheckoutRouteImport } from './routes/checkout'
@@ -20,6 +21,8 @@ import { Route as DealsRouteImport } from './routes/deals'
 import { Route as ModelsRouteImport } from './routes/models'
 import { Route as PartsRouteImport } from './routes/parts'
 import { Route as WishlistRouteImport } from './routes/wishlist'
+import { Route as AdminIndexRouteImport } from './routes/admin.index'
+import { Route as AdminProductsRouteImport } from './routes/admin.products'
 import { Route as ProductSlugRouteImport } from './routes/product.$slug'
 
 const IndexRoute = IndexRouteImport.update({
@@ -30,6 +33,11 @@ const IndexRoute = IndexRouteImport.update({
 const AccountRoute = AccountRouteImport.update({
   id: '/account',
   path: '/account',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminRoute = AdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CartRoute = CartRouteImport.update({
@@ -77,6 +85,16 @@ const WishlistRoute = WishlistRouteImport.update({
   path: '/wishlist',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminIndexRoute = AdminIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminProductsRoute = AdminProductsRouteImport.update({
+  id: '/products',
+  path: '/products',
+  getParentRoute: () => AdminRoute,
+} as any)
 const ProductSlugRoute = ProductSlugRouteImport.update({
   id: '/product/$slug',
   path: '/product/$slug',
@@ -86,6 +104,7 @@ const ProductSlugRoute = ProductSlugRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/account': typeof AccountRoute
+  '/admin': typeof AdminRouteWithChildren
   '/cart': typeof CartRoute
   '/categories': typeof CategoriesRoute
   '/checkout': typeof CheckoutRoute
@@ -95,7 +114,9 @@ export interface FileRoutesByFullPath {
   '/models': typeof ModelsRoute
   '/parts': typeof PartsRoute
   '/wishlist': typeof WishlistRoute
+  '/admin/products': typeof AdminProductsRoute
   '/product/$slug': typeof ProductSlugRoute
+  '/admin/': typeof AdminIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -109,12 +130,15 @@ export interface FileRoutesByTo {
   '/models': typeof ModelsRoute
   '/parts': typeof PartsRoute
   '/wishlist': typeof WishlistRoute
+  '/admin/products': typeof AdminProductsRoute
   '/product/$slug': typeof ProductSlugRoute
+  '/admin': typeof AdminIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/account': typeof AccountRoute
+  '/admin': typeof AdminRouteWithChildren
   '/cart': typeof CartRoute
   '/categories': typeof CategoriesRoute
   '/checkout': typeof CheckoutRoute
@@ -124,13 +148,16 @@ export interface FileRoutesById {
   '/models': typeof ModelsRoute
   '/parts': typeof PartsRoute
   '/wishlist': typeof WishlistRoute
+  '/admin/products': typeof AdminProductsRoute
   '/product/$slug': typeof ProductSlugRoute
+  '/admin/': typeof AdminIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
     | '/account'
+    | '/admin'
     | '/cart'
     | '/categories'
     | '/checkout'
@@ -140,7 +167,9 @@ export interface FileRouteTypes {
     | '/models'
     | '/parts'
     | '/wishlist'
+    | '/admin/products'
     | '/product/$slug'
+    | '/admin/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -154,11 +183,14 @@ export interface FileRouteTypes {
     | '/models'
     | '/parts'
     | '/wishlist'
+    | '/admin/products'
     | '/product/$slug'
+    | '/admin'
   id:
     | '__root__'
     | '/'
     | '/account'
+    | '/admin'
     | '/cart'
     | '/categories'
     | '/checkout'
@@ -168,12 +200,15 @@ export interface FileRouteTypes {
     | '/models'
     | '/parts'
     | '/wishlist'
+    | '/admin/products'
     | '/product/$slug'
+    | '/admin/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AccountRoute: typeof AccountRoute
+  AdminRoute: typeof AdminRouteWithChildren
   CartRoute: typeof CartRoute
   CategoriesRoute: typeof CategoriesRoute
   CheckoutRoute: typeof CheckoutRoute
@@ -200,6 +235,13 @@ declare module '@tanstack/react-router' {
       path: '/account'
       fullPath: '/account'
       preLoaderRoute: typeof AccountRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin': {
+      id: '/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AdminRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/cart': {
@@ -265,6 +307,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WishlistRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/': {
+      id: '/admin/'
+      path: '/'
+      fullPath: '/admin/'
+      preLoaderRoute: typeof AdminIndexRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/products': {
+      id: '/admin/products'
+      path: '/products'
+      fullPath: '/admin/products'
+      preLoaderRoute: typeof AdminProductsRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/product/$slug': {
       id: '/product/$slug'
       path: '/product/$slug'
@@ -275,9 +331,22 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface AdminRouteChildren {
+  AdminProductsRoute: typeof AdminProductsRoute
+  AdminIndexRoute: typeof AdminIndexRoute
+}
+
+const AdminRouteChildren: AdminRouteChildren = {
+  AdminProductsRoute: AdminProductsRoute,
+  AdminIndexRoute: AdminIndexRoute,
+}
+
+const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AccountRoute: AccountRoute,
+  AdminRoute: AdminRouteWithChildren,
   CartRoute: CartRoute,
   CategoriesRoute: CategoriesRoute,
   CheckoutRoute: CheckoutRoute,
