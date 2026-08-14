@@ -1,0 +1,397 @@
+import brakes from "@/assets/part-brakes.jpg";
+import engine from "@/assets/part-engine.jpg";
+import suspension from "@/assets/part-suspension.jpg";
+import lighting from "@/assets/part-lighting.jpg";
+import filters from "@/assets/part-filters.jpg";
+import electrical from "@/assets/part-electrical.jpg";
+import body from "@/assets/part-body.jpg";
+import wheels from "@/assets/part-wheels.jpg";
+import interior from "@/assets/part-interior.jpg";
+
+export type Generation = {
+  code: "WK" | "WK2" | "WL";
+  name: string;
+  years: number[];
+  engines: string[];
+};
+
+export const GENERATIONS: Generation[] = [
+  {
+    code: "WK",
+    name: "Grand Cherokee WK",
+    years: [2005, 2006, 2007, 2008, 2009, 2010],
+    engines: ["3.0L CRD Diesel", "3.7L V6", "4.7L V8", "5.7L V8 HEMI", "6.1L V8 SRT"],
+  },
+  {
+    code: "WK2",
+    name: "Grand Cherokee WK2",
+    years: [
+      2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021,
+    ],
+    engines: ["3.0L EcoDiesel", "3.6L V6", "5.7L V8 HEMI", "6.4L V8 SRT", "6.2L Supercharged"],
+  },
+  {
+    code: "WL",
+    name: "Grand Cherokee WL",
+    years: [2021, 2022, 2023, 2024, 2025, 2026],
+    engines: ["3.6L V6", "5.7L V8 HEMI", "2.0L Turbo 4xe"],
+  },
+];
+
+export const YEARS: number[] = Array.from(
+  new Set(GENERATIONS.flatMap((g) => g.years)),
+).sort((a, b) => b - a);
+
+export function generationsForYear(year: number) {
+  return GENERATIONS.filter((g) => g.years.includes(year));
+}
+
+export function enginesFor(year: number, code: string) {
+  const gen = GENERATIONS.find((g) => g.code === code);
+  if (!gen) return [];
+  if (code === "WL" && year <= 2021) return ["3.6L V6", "5.7L V8 HEMI"];
+  if (code === "WK2" && year <= 2013) return gen.engines.filter((e) => e !== "6.4L V8 SRT");
+  return gen.engines;
+}
+
+export type Category = {
+  slug: string;
+  name: string;
+  icon: string;
+  image: string;
+  blurb: string;
+};
+
+export const CATEGORIES: Category[] = [
+  { slug: "engine", name: "Engine", icon: "Cog", image: engine, blurb: "Gaskets, belts, pumps, mounts" },
+  { slug: "transmission", name: "Transmission", icon: "Settings2", image: engine, blurb: "Solenoids, filters, mounts" },
+  { slug: "brakes", name: "Brakes", icon: "Disc3", image: brakes, blurb: "Pads, discs, calipers, sensors" },
+  { slug: "suspension", name: "Suspension", icon: "Waves", image: suspension, blurb: "Air struts, arms, bushings" },
+  { slug: "electrical", name: "Electrical", icon: "Zap", image: electrical, blurb: "Sensors, modules, batteries" },
+  { slug: "body", name: "Body Parts", icon: "CarFront", image: body, blurb: "Bumpers, fenders, grilles" },
+  { slug: "interior", name: "Interior", icon: "Armchair", image: interior, blurb: "Trim, consoles, mats" },
+  { slug: "exterior", name: "Exterior", icon: "Shield", image: body, blurb: "Steps, racks, mouldings" },
+  { slug: "lighting", name: "Lighting", icon: "Lightbulb", image: lighting, blurb: "Headlights, tails, LEDs" },
+  { slug: "cooling", name: "Cooling", icon: "Snowflake", image: engine, blurb: "Radiators, fans, hoses" },
+  { slug: "exhaust", name: "Exhaust", icon: "Wind", image: engine, blurb: "Mufflers, sensors, pipes" },
+  { slug: "steering", name: "Steering", icon: "Navigation", image: suspension, blurb: "Racks, tie rods, pumps" },
+  { slug: "filters", name: "Filters", icon: "Filter", image: filters, blurb: "Oil, air, cabin, fuel" },
+  { slug: "wheels", name: "Wheels & Tyres", icon: "CircleDot", image: wheels, blurb: "Rims, TPMS, tyres" },
+  { slug: "accessories", name: "Accessories", icon: "Package", image: interior, blurb: "Covers, carriers, mats" },
+];
+
+export type Fitment = { gen: "WK" | "WK2" | "WL"; from: number; to: number; engines?: string[] };
+
+export type Product = {
+  id: string;
+  slug: string;
+  name: string;
+  category: string;
+  brand: string;
+  partNumber: string;
+  oemNumber: string;
+  price: number;
+  oldPrice?: number;
+  condition: "New" | "Used";
+  origin: "OEM" | "Aftermarket";
+  stock: number;
+  rating: number;
+  reviews: number;
+  seller: string;
+  sellerRating: number;
+  delivery: string;
+  warranty: string;
+  image: string;
+  description: string;
+  fits: Fitment[];
+  featured?: boolean;
+};
+
+const p = (x: Product) => x;
+
+export const PRODUCTS: Product[] = [
+  p({
+    id: "GC-1001", slug: "front-brake-disc-vented-350mm", name: "Front Brake Disc Vented 350mm",
+    category: "brakes", brand: "Brembo", partNumber: "09.B356.11", oemNumber: "68140742AA",
+    price: 46500, oldPrice: 52000, condition: "New", origin: "Aftermarket", stock: 12, rating: 4.8, reviews: 126,
+    seller: "TrailLine Parts", sellerRating: 4.9, delivery: "2–4 days", warranty: "24 months", image: brakes,
+    description: "High-carbon vented front rotor for WK2 platform. Precision balanced, anti-corrosion coated.",
+    fits: [{ gen: "WK2", from: 2011, to: 2021 }], featured: true,
+  }),
+  p({
+    id: "GC-1002", slug: "front-brake-pad-set-ceramic", name: "Front Brake Pad Set — Ceramic",
+    category: "brakes", brand: "Mopar", partNumber: "68052370AB", oemNumber: "68144133AA",
+    price: 28900, condition: "New", origin: "OEM", stock: 34, rating: 4.7, reviews: 214,
+    seller: "Mopar Direct", sellerRating: 4.8, delivery: "3–5 days", warranty: "12 months", image: brakes,
+    description: "Genuine Mopar ceramic pad set. Low dust, quiet braking, includes wear sensor clips.",
+    fits: [{ gen: "WK2", from: 2011, to: 2021 }, { gen: "WL", from: 2021, to: 2026 }], featured: true,
+  }),
+  p({
+    id: "GC-1003", slug: "rear-brake-caliper-left", name: "Rear Brake Caliper — Left",
+    category: "brakes", brand: "TRW", partNumber: "BHW412E", oemNumber: "68052367AA",
+    price: 61200, condition: "Used", origin: "OEM", stock: 3, rating: 4.3, reviews: 41,
+    seller: "Cherokee Salvage", sellerRating: 4.5, delivery: "4–7 days", warranty: "3 months", image: brakes,
+    description: "Tested and pressure-checked used caliper from a low mileage donor vehicle.",
+    fits: [{ gen: "WK2", from: 2014, to: 2021 }],
+  }),
+  p({
+    id: "GC-2001", slug: "oil-filter-housing-cooler", name: "Oil Filter Housing with Cooler",
+    category: "engine", brand: "Mopar", partNumber: "68105583AF", oemNumber: "68105583AF",
+    price: 118000, oldPrice: 129000, condition: "New", origin: "OEM", stock: 7, rating: 4.9, reviews: 88,
+    seller: "Mopar Direct", sellerRating: 4.8, delivery: "3–5 days", warranty: "24 months", image: engine,
+    description: "Updated aluminium housing revision that resolves the common plastic housing leak on 3.6L Pentastar.",
+    fits: [{ gen: "WK2", from: 2011, to: 2021, engines: ["3.6L V6"] }], featured: true,
+  }),
+  p({
+    id: "GC-2002", slug: "serpentine-belt-tensioner", name: "Serpentine Belt Tensioner Assembly",
+    category: "engine", brand: "Gates", partNumber: "38387", oemNumber: "5184498AF",
+    price: 34500, condition: "New", origin: "Aftermarket", stock: 21, rating: 4.6, reviews: 63,
+    seller: "TrailLine Parts", sellerRating: 4.9, delivery: "2–4 days", warranty: "18 months", image: engine,
+    description: "Spring-loaded tensioner with sealed bearing for quiet, slip-free belt operation.",
+    fits: [{ gen: "WK2", from: 2011, to: 2021, engines: ["3.6L V6"] }, { gen: "WK", from: 2005, to: 2010 }],
+  }),
+  p({
+    id: "GC-2003", slug: "engine-mount-right-hemi", name: "Engine Mount Right — 5.7 HEMI",
+    category: "engine", brand: "Anchor", partNumber: "3413", oemNumber: "68110950AA",
+    price: 42700, condition: "New", origin: "Aftermarket", stock: 9, rating: 4.4, reviews: 29,
+    seller: "OffRoad Depot", sellerRating: 4.6, delivery: "3–6 days", warranty: "12 months", image: engine,
+    description: "Hydraulic engine mount tuned for V8 vibration damping.",
+    fits: [{ gen: "WK2", from: 2011, to: 2021, engines: ["5.7L V8 HEMI"] }],
+  }),
+  p({
+    id: "GC-3001", slug: "air-suspension-strut-front", name: "Quadra-Lift Air Suspension Strut — Front",
+    category: "suspension", brand: "Arnott", partNumber: "AS-3283", oemNumber: "68258114AB",
+    price: 245000, oldPrice: 268000, condition: "New", origin: "Aftermarket", stock: 4, rating: 4.8, reviews: 57,
+    seller: "AirRide Garage", sellerRating: 4.9, delivery: "5–8 days", warranty: "36 months", image: suspension,
+    description: "Direct replacement Quadra-Lift front air strut with new bladder and solenoid.",
+    fits: [{ gen: "WK2", from: 2011, to: 2021 }], featured: true,
+  }),
+  p({
+    id: "GC-3002", slug: "front-lower-control-arm", name: "Front Lower Control Arm — Right",
+    category: "suspension", brand: "Moog", partNumber: "RK623462", oemNumber: "68022506AC",
+    price: 58400, condition: "New", origin: "Aftermarket", stock: 15, rating: 4.7, reviews: 71,
+    seller: "TrailLine Parts", sellerRating: 4.9, delivery: "2–4 days", warranty: "24 months", image: suspension,
+    description: "Forged arm with pre-installed ball joint and problem-solver bushings.",
+    fits: [{ gen: "WK2", from: 2011, to: 2021 }, { gen: "WL", from: 2021, to: 2026 }],
+  }),
+  p({
+    id: "GC-3003", slug: "air-compressor-quadra-lift", name: "Air Suspension Compressor",
+    category: "suspension", brand: "Mopar", partNumber: "68204730AB", oemNumber: "68204730AB",
+    price: 187500, condition: "Used", origin: "OEM", stock: 2, rating: 4.2, reviews: 18,
+    seller: "Cherokee Salvage", sellerRating: 4.5, delivery: "4–7 days", warranty: "3 months", image: suspension,
+    description: "Working pull-off compressor with dryer, bench tested for pressure and duty cycle.",
+    fits: [{ gen: "WK2", from: 2014, to: 2021 }],
+  }),
+  p({
+    id: "GC-4001", slug: "led-headlight-assembly-left", name: "LED Headlight Assembly — Left",
+    category: "lighting", brand: "Mopar", partNumber: "55079379AH", oemNumber: "68266647AB",
+    price: 312000, condition: "New", origin: "OEM", stock: 5, rating: 4.9, reviews: 44,
+    seller: "Mopar Direct", sellerRating: 4.8, delivery: "5–8 days", warranty: "24 months", image: lighting,
+    description: "Full LED projector headlamp with DRL signature, plug-and-play harness.",
+    fits: [{ gen: "WK2", from: 2017, to: 2021 }], featured: true,
+  }),
+  p({
+    id: "GC-4002", slug: "tail-light-led-right", name: "LED Tail Light — Right",
+    category: "lighting", brand: "Depo", partNumber: "333-1961R", oemNumber: "68236134AC",
+    price: 87400, condition: "New", origin: "Aftermarket", stock: 11, rating: 4.4, reviews: 33,
+    seller: "OffRoad Depot", sellerRating: 4.6, delivery: "3–6 days", warranty: "12 months", image: lighting,
+    description: "Sealed LED tail lamp, E-marked, matched to factory lens tint.",
+    fits: [{ gen: "WK2", from: 2014, to: 2021 }],
+  }),
+  p({
+    id: "GC-4003", slug: "fog-light-kit", name: "Fog Light Kit with Bezels",
+    category: "lighting", brand: "Hella", partNumber: "H11-FGK", oemNumber: "68266659AA",
+    price: 54900, condition: "New", origin: "Aftermarket", stock: 18, rating: 4.5, reviews: 26,
+    seller: "TrailLine Parts", sellerRating: 4.9, delivery: "2–4 days", warranty: "12 months", image: lighting,
+    description: "Complete fog lamp pair including bezels, bulbs and wiring clips.",
+    fits: [{ gen: "WK2", from: 2011, to: 2021 }, { gen: "WK", from: 2005, to: 2010 }],
+  }),
+  p({
+    id: "GC-5001", slug: "oil-filter-pentastar", name: "Engine Oil Filter — Pentastar",
+    category: "filters", brand: "Mopar", partNumber: "68191349AC", oemNumber: "68191349AC",
+    price: 4900, condition: "New", origin: "OEM", stock: 140, rating: 4.9, reviews: 402,
+    seller: "Mopar Direct", sellerRating: 4.8, delivery: "2–4 days", warranty: "—", image: filters,
+    description: "Genuine cartridge oil filter with O-ring, for 3.6L Pentastar service intervals.",
+    fits: [{ gen: "WK2", from: 2011, to: 2021, engines: ["3.6L V6"] }, { gen: "WL", from: 2021, to: 2026, engines: ["3.6L V6"] }],
+  }),
+  p({
+    id: "GC-5002", slug: "cabin-air-filter-carbon", name: "Cabin Air Filter — Activated Carbon",
+    category: "filters", brand: "Mann", partNumber: "CUK 2939", oemNumber: "68223044AA",
+    price: 7800, condition: "New", origin: "Aftermarket", stock: 96, rating: 4.7, reviews: 158,
+    seller: "TrailLine Parts", sellerRating: 4.9, delivery: "2–4 days", warranty: "—", image: filters,
+    description: "Carbon-layer cabin filter that traps dust, pollen and odours.",
+    fits: [{ gen: "WK2", from: 2011, to: 2021 }, { gen: "WL", from: 2021, to: 2026 }],
+  }),
+  p({
+    id: "GC-5003", slug: "air-filter-panel", name: "Engine Air Filter Panel",
+    category: "filters", brand: "K&N", partNumber: "33-2453", oemNumber: "53034051AD",
+    price: 21400, condition: "New", origin: "Aftermarket", stock: 40, rating: 4.6, reviews: 91,
+    seller: "OffRoad Depot", sellerRating: 4.6, delivery: "3–6 days", warranty: "Lifetime", image: filters,
+    description: "Washable high-flow drop-in panel filter, million-mile limited warranty.",
+    fits: [{ gen: "WK2", from: 2011, to: 2021 }],
+  }),
+  p({
+    id: "GC-6001", slug: "radiator-assembly", name: "Radiator Assembly with Fan Shroud",
+    category: "cooling", brand: "Denso", partNumber: "221-9500", oemNumber: "55038002AE",
+    price: 142000, condition: "New", origin: "Aftermarket", stock: 6, rating: 4.6, reviews: 37,
+    seller: "AirRide Garage", sellerRating: 4.9, delivery: "5–8 days", warranty: "24 months", image: engine,
+    description: "Aluminium core radiator, pressure tested, includes upper mounts.",
+    fits: [{ gen: "WK2", from: 2011, to: 2021 }],
+  }),
+  p({
+    id: "GC-6002", slug: "thermostat-housing", name: "Thermostat Housing with Sensor",
+    category: "cooling", brand: "Mopar", partNumber: "5184651AH", oemNumber: "5184651AH",
+    price: 38900, condition: "New", origin: "OEM", stock: 13, rating: 4.8, reviews: 52,
+    seller: "Mopar Direct", sellerRating: 4.8, delivery: "3–5 days", warranty: "24 months", image: engine,
+    description: "Integrated thermostat and housing with coolant temperature sensor fitted.",
+    fits: [{ gen: "WK2", from: 2011, to: 2021, engines: ["3.6L V6"] }],
+  }),
+  p({
+    id: "GC-7001", slug: "abs-wheel-speed-sensor-front", name: "ABS Wheel Speed Sensor — Front",
+    category: "electrical", brand: "Bosch", partNumber: "0265008096", oemNumber: "68306621AA",
+    price: 19800, condition: "New", origin: "Aftermarket", stock: 27, rating: 4.5, reviews: 84,
+    seller: "TrailLine Parts", sellerRating: 4.9, delivery: "2–4 days", warranty: "18 months", image: electrical,
+    description: "Direct fit hall-effect sensor with moulded connector and harness clip.",
+    fits: [{ gen: "WK2", from: 2011, to: 2021 }, { gen: "WK", from: 2005, to: 2010 }],
+  }),
+  p({
+    id: "GC-7002", slug: "ignition-coil-pack", name: "Ignition Coil Pack (Set of 6)",
+    category: "electrical", brand: "NGK", partNumber: "U5286", oemNumber: "68223569AA",
+    price: 96500, condition: "New", origin: "Aftermarket", stock: 8, rating: 4.7, reviews: 65,
+    seller: "OffRoad Depot", sellerRating: 4.6, delivery: "3–6 days", warranty: "24 months", image: electrical,
+    description: "Six-piece coil-on-plug set with epoxy-sealed windings for heat resistance.",
+    fits: [{ gen: "WK2", from: 2011, to: 2021, engines: ["3.6L V6"] }],
+  }),
+  p({
+    id: "GC-7003", slug: "uconnect-8-4-radio", name: "Uconnect 8.4 Radio Head Unit",
+    category: "electrical", brand: "Mopar", partNumber: "68245831AF", oemNumber: "68245831AF",
+    price: 385000, condition: "Used", origin: "OEM", stock: 1, rating: 4.1, reviews: 12,
+    seller: "Cherokee Salvage", sellerRating: 4.5, delivery: "4–7 days", warranty: "3 months", image: electrical,
+    description: "Working Uconnect 8.4 unit pulled from a 2018 Limited. Requires dealer VIN pairing.",
+    fits: [{ gen: "WK2", from: 2014, to: 2021 }],
+  }),
+  p({
+    id: "GC-8001", slug: "front-bumper-cover", name: "Front Bumper Cover — Primed",
+    category: "body", brand: "Replace", partNumber: "CH1000A05", oemNumber: "68143078AB",
+    price: 168000, condition: "New", origin: "Aftermarket", stock: 3, rating: 4.2, reviews: 21,
+    seller: "OffRoad Depot", sellerRating: 4.6, delivery: "7–10 days", warranty: "12 months", image: body,
+    description: "Primed and ready to paint bumper cover with fog lamp cut-outs.",
+    fits: [{ gen: "WK2", from: 2014, to: 2021 }],
+  }),
+  p({
+    id: "GC-8002", slug: "front-grille-chrome-insert", name: "Front Grille with Chrome Inserts",
+    category: "body", brand: "Mopar", partNumber: "68143075AD", oemNumber: "68143075AD",
+    price: 129000, oldPrice: 145000, condition: "New", origin: "OEM", stock: 4, rating: 4.8, reviews: 30,
+    seller: "Mopar Direct", sellerRating: 4.8, delivery: "5–8 days", warranty: "24 months", image: body,
+    description: "Seven-slot grille assembly with chrome surrounds and clip set.",
+    fits: [{ gen: "WK2", from: 2017, to: 2021 }], featured: true,
+  }),
+  p({
+    id: "GC-9001", slug: "alloy-wheel-20-inch", name: "20\" Alloy Wheel — Satin Carbon",
+    category: "wheels", brand: "Mopar", partNumber: "5XL06AAAAA", oemNumber: "68306648AA",
+    price: 178000, condition: "New", origin: "OEM", stock: 8, rating: 4.9, reviews: 39,
+    seller: "AirRide Garage", sellerRating: 4.9, delivery: "5–8 days", warranty: "24 months", image: wheels,
+    description: "Factory 20-inch alloy in satin carbon finish, TPMS ready, 5x127 fitment.",
+    fits: [{ gen: "WK2", from: 2011, to: 2021 }, { gen: "WL", from: 2021, to: 2026 }],
+  }),
+  p({
+    id: "GC-9002", slug: "tpms-sensor", name: "TPMS Tyre Pressure Sensor",
+    category: "wheels", brand: "Schrader", partNumber: "33500", oemNumber: "68105280AE",
+    price: 15600, condition: "New", origin: "Aftermarket", stock: 62, rating: 4.5, reviews: 110,
+    seller: "TrailLine Parts", sellerRating: 4.9, delivery: "2–4 days", warranty: "12 months", image: wheels,
+    description: "Pre-programmed 433MHz sensor with aluminium valve stem.",
+    fits: [{ gen: "WK2", from: 2011, to: 2021 }, { gen: "WL", from: 2021, to: 2026 }],
+  }),
+  p({
+    id: "GC-A001", slug: "all-weather-floor-mats", name: "All-Weather Rubber Floor Mat Set",
+    category: "accessories", brand: "Mopar", partNumber: "82214678AB", oemNumber: "82214678AB",
+    price: 48900, condition: "New", origin: "OEM", stock: 25, rating: 4.8, reviews: 143,
+    seller: "Mopar Direct", sellerRating: 4.8, delivery: "3–5 days", warranty: "12 months", image: interior,
+    description: "Deep-channel moulded mats with Grand Cherokee logo and factory retention clips.",
+    fits: [{ gen: "WK2", from: 2011, to: 2021 }, { gen: "WL", from: 2021, to: 2026 }],
+  }),
+  p({
+    id: "GC-A002", slug: "roof-cross-rails", name: "Roof Cross Rail Kit",
+    category: "accessories", brand: "Thule", partNumber: "TH-GC-XR", oemNumber: "82212072AB",
+    price: 74500, condition: "New", origin: "Aftermarket", stock: 10, rating: 4.6, reviews: 47,
+    seller: "OffRoad Depot", sellerRating: 4.6, delivery: "3–6 days", warranty: "24 months", image: interior,
+    description: "Locking cross rails rated to 68 kg dynamic load, tool-free installation.",
+    fits: [{ gen: "WK2", from: 2011, to: 2021 }],
+  }),
+  p({
+    id: "GC-B001", slug: "centre-console-lid", name: "Centre Console Lid — Black Leather",
+    category: "interior", brand: "Mopar", partNumber: "1VW14DX9AA", oemNumber: "1VW14DX9AA",
+    price: 39900, condition: "Used", origin: "OEM", stock: 2, rating: 4.0, reviews: 9,
+    seller: "Cherokee Salvage", sellerRating: 4.5, delivery: "4–7 days", warranty: "3 months", image: interior,
+    description: "Clean used console lid, hinge intact, minor wear on leather edge.",
+    fits: [{ gen: "WK2", from: 2011, to: 2016 }],
+  }),
+  p({
+    id: "GC-C001", slug: "transmission-solenoid-pack", name: "8HP Transmission Solenoid Pack",
+    category: "transmission", brand: "ZF", partNumber: "1087298366", oemNumber: "68225344AA",
+    price: 215000, condition: "New", origin: "OEM", stock: 3, rating: 4.7, reviews: 22,
+    seller: "AirRide Garage", sellerRating: 4.9, delivery: "5–8 days", warranty: "24 months", image: engine,
+    description: "ZF 8HP45/8HP70 mechatronic solenoid body, supplied with new sealing sleeves.",
+    fits: [{ gen: "WK2", from: 2011, to: 2021 }],
+  }),
+  p({
+    id: "GC-C002", slug: "transmission-filter-kit", name: "Transmission Filter & Pan Gasket Kit",
+    category: "transmission", brand: "Mopar", partNumber: "68225344AB", oemNumber: "68225344AB",
+    price: 32400, condition: "New", origin: "OEM", stock: 19, rating: 4.8, reviews: 58,
+    seller: "Mopar Direct", sellerRating: 4.8, delivery: "3–5 days", warranty: "12 months", image: engine,
+    description: "Service kit with filter, integrated pan gasket and bolt set.",
+    fits: [{ gen: "WK2", from: 2011, to: 2021 }, { gen: "WL", from: 2021, to: 2026 }],
+  }),
+  p({
+    id: "GC-D001", slug: "exhaust-muffler-rear", name: "Rear Exhaust Muffler Assembly",
+    category: "exhaust", brand: "Walker", partNumber: "56352", oemNumber: "68276650AA",
+    price: 92300, condition: "New", origin: "Aftermarket", stock: 5, rating: 4.3, reviews: 19,
+    seller: "OffRoad Depot", sellerRating: 4.6, delivery: "5–8 days", warranty: "18 months", image: engine,
+    description: "Aluminised steel muffler with factory-matched hanger positions.",
+    fits: [{ gen: "WK2", from: 2011, to: 2021, engines: ["3.6L V6"] }],
+  }),
+  p({
+    id: "GC-E001", slug: "steering-rack-electric", name: "Electric Power Steering Rack",
+    category: "steering", brand: "Mopar", partNumber: "68170218AC", oemNumber: "68170218AC",
+    price: 468000, condition: "Used", origin: "OEM", stock: 1, rating: 4.4, reviews: 7,
+    seller: "Cherokee Salvage", sellerRating: 4.5, delivery: "7–10 days", warranty: "6 months", image: suspension,
+    description: "Tested EPS rack with motor, no play, boots in good condition.",
+    fits: [{ gen: "WK2", from: 2014, to: 2021 }],
+  }),
+  p({
+    id: "GC-E002", slug: "outer-tie-rod-end", name: "Outer Tie Rod End",
+    category: "steering", brand: "Moog", partNumber: "ES800974", oemNumber: "68069650AA",
+    price: 18700, condition: "New", origin: "Aftermarket", stock: 30, rating: 4.7, reviews: 96,
+    seller: "TrailLine Parts", sellerRating: 4.9, delivery: "2–4 days", warranty: "24 months", image: suspension,
+    description: "Greaseable tie rod end with hardened stud and dust boot.",
+    fits: [{ gen: "WK2", from: 2011, to: 2021 }, { gen: "WK", from: 2005, to: 2010 }],
+  }),
+  p({
+    id: "GC-F001", slug: "side-step-bars", name: "Side Step Bars — Black Powder Coat",
+    category: "exterior", brand: "Westin", partNumber: "21-534PS", oemNumber: "82213111AB",
+    price: 138000, condition: "New", origin: "Aftermarket", stock: 6, rating: 4.5, reviews: 34,
+    seller: "OffRoad Depot", sellerRating: 4.6, delivery: "7–10 days", warranty: "24 months", image: body,
+    description: "Bolt-on running boards with non-slip pads, no drilling required.",
+    fits: [{ gen: "WK2", from: 2011, to: 2021 }],
+  }),
+];
+
+export function getProduct(slug: string) {
+  return PRODUCTS.find((x) => x.slug === slug);
+}
+
+export function categoryName(slug: string) {
+  return CATEGORIES.find((c) => c.slug === slug)?.name ?? slug;
+}
+
+export const BRANDS = Array.from(new Set(PRODUCTS.map((x) => x.brand))).sort();
+export const SELLERS = Array.from(new Set(PRODUCTS.map((x) => x.seller))).sort();
+
+export function formatAMD(value: number) {
+  return `֏${value.toLocaleString("en-US")}`;
+}
+
+export function fitmentLabel(f: Fitment) {
+  const range = f.from === f.to ? `${f.from}` : `${f.from}–${f.to}`;
+  return `Grand Cherokee ${f.gen} ${range}${f.engines ? ` · ${f.engines.join(", ")}` : ""}`;
+}
