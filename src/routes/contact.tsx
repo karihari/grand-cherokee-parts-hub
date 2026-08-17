@@ -125,7 +125,7 @@ function ContactPage() {
         </div>
         <button
           type="submit"
-          disabled={sending}
+          disabled={sending || !ready}
           className="h-12 w-full rounded-md bg-primary text-sm font-semibold text-primary-foreground disabled:opacity-60 sm:w-auto sm:px-8"
         >
           {sending ? "Sending…" : "Send enquiry"}
