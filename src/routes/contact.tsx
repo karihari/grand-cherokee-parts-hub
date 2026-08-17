@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { MessageCircle, Phone, Send } from "lucide-react";
 import { toast } from "sonner";
 import { PHONE_DISPLAY, telegramLink, whatsappLink } from "@/lib/contact";
