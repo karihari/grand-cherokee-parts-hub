@@ -27,6 +27,9 @@ export const Route = createFileRoute("/contact")({
 function ContactPage() {
   const { activeVehicle } = useStore();
   const [sent, setSent] = useState(false);
+  const [sending, setSending] = useState(false);
+  const submitEnquiry = useServerFn(sendEnquiry);
+
   const message = `Hello, I have a question about Grand Cherokee parts.\nVehicle: ${
     activeVehicle ? vehicleLabel(activeVehicle) : "not selected yet"
   }`;
