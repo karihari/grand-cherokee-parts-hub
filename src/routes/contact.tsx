@@ -74,10 +74,29 @@ function ContactPage() {
 
       <form
         className="card-surface mt-6 space-y-4 p-5"
-        onSubmit={(e) => {
+        onSubmit={async (e) => {
           e.preventDefault();
-          setSent(true);
-          toast.success("Message sent", { description: "We reply within one business hour." });
+          const form = e.currentTarget;
+          const fd = new FormData(form);
+          setSending(true);
+          const result = await submitEnquiry({
+            data: {
+              name: String(fd.get("name") ?? ""),
+              phone: String(fd.get("phone") ?? ""),
+              email: String(fd.get("email") ?? ""),
+              part: String(fd.get("part") ?? ""),
+              message: String(fd.get("msg") ?? ""),
+              vehicle: activeVehicle ? vehicleLabel(activeVehicle) : "",
+            },
+          }).catch(() => ({ ok: false as const }));
+          setSending(false);
+          if (result.ok) {
+            setSent(true);
+            form.reset();
+            toast.success("Message sent", { description: "We reply within one business hour." });
+          } else {
+            toast.error("Could not send", { description: "Please try WhatsApp or Telegram." });
+          }
         }}
       >
         <h2 className="text-lg font-bold">Send an enquiry</h2>
@@ -93,6 +112,7 @@ function ContactPage() {
           </label>
           <textarea
             id="msg"
+            name="msg"
             rows={4}
             className="w-full rounded-md border border-input bg-card p-3 text-sm"
             defaultValue={activeVehicle ? `My vehicle: ${vehicleLabel(activeVehicle)}` : ""}
@@ -100,10 +120,12 @@ function ContactPage() {
         </div>
         <button
           type="submit"
-          className="h-12 w-full rounded-md bg-primary text-sm font-semibold text-primary-foreground sm:w-auto sm:px-8"
+          disabled={sending}
+          className="h-12 w-full rounded-md bg-primary text-sm font-semibold text-primary-foreground disabled:opacity-60 sm:w-auto sm:px-8"
         >
-          Send enquiry
+          {sending ? "Sending…" : "Send enquiry"}
         </button>
+
         {sent ? (
           <p role="status" className="text-sm font-medium text-success">
             Thanks — your enquiry is with our Grand Cherokee team.
