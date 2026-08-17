@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { MessageCircle, Phone, Send } from "lucide-react";
 import { toast } from "sonner";
 import { PHONE_DISPLAY, telegramLink, whatsappLink } from "@/lib/contact";
@@ -28,6 +28,8 @@ function ContactPage() {
   const { activeVehicle } = useStore();
   const [sent, setSent] = useState(false);
   const [sending, setSending] = useState(false);
+  const [ready, setReady] = useState(false);
+  useEffect(() => setReady(true), []);
   const submitEnquiry = useServerFn(sendEnquiry);
 
   const message = `Hello, I have a question about Grand Cherokee parts.\nVehicle: ${
@@ -123,7 +125,7 @@ function ContactPage() {
         </div>
         <button
           type="submit"
-          disabled={sending}
+          disabled={sending || !ready}
           className="h-12 w-full rounded-md bg-primary text-sm font-semibold text-primary-foreground disabled:opacity-60 sm:w-auto sm:px-8"
         >
           {sending ? "Sending…" : "Send enquiry"}
