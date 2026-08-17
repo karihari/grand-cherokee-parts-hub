@@ -28,6 +28,8 @@ function ContactPage() {
   const { activeVehicle } = useStore();
   const [sent, setSent] = useState(false);
   const [sending, setSending] = useState(false);
+  const [ready, setReady] = useState(false);
+  useEffect(() => setReady(true), []);
   const submitEnquiry = useServerFn(sendEnquiry);
 
   const message = `Hello, I have a question about Grand Cherokee parts.\nVehicle: ${
