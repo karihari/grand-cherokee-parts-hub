@@ -27,9 +27,6 @@ export function Footer() {
           <Link to="/contact" className="text-surface-foreground/80 hover:text-accent">
             Contact
           </Link>
-          <Link to="/admin" className="text-surface-foreground/80 hover:text-accent">
-            Admin
-          </Link>
         </nav>
       </div>
       <div className="border-t border-sidebar-border">

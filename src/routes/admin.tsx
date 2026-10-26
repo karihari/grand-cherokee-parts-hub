@@ -1,10 +1,12 @@
-import { createFileRoute, Link, Outlet } from "@tanstack/react-router";
+import { createFileRoute, Link, Outlet, redirect, useRouter } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
 import {
   BarChart3,
   Boxes,
   Car,
   FolderTree,
   LayoutDashboard,
+  LogOut,
   MessageSquare,
   Package,
   Percent,
@@ -14,8 +16,13 @@ import {
   Store,
   Users,
 } from "lucide-react";
+import { adminLogout, getAdminSession } from "@/lib/auth.functions";
 
 export const Route = createFileRoute("/admin")({
+  beforeLoad: async ({ location }) => {
+    const { isAdmin } = await getAdminSession();
+    if (!isAdmin) throw redirect({ to: "/admin/login", search: { redirect: location.href } });
+  },
   head: () => ({
     meta: [
       { title: "Admin | GC Parts" },
@@ -45,6 +52,13 @@ const LINKS = [
 ] as const;
 
 function AdminLayout() {
+  const router = useRouter();
+  const logout = useServerFn(adminLogout);
+  const signOut = async () => {
+    await logout();
+    await router.navigate({ to: "/admin/login", search: { redirect: undefined } });
+  };
+
   return (
     <div className="flex min-h-screen bg-background">
       <aside className="hidden w-64 shrink-0 flex-col bg-sidebar text-sidebar-foreground lg:flex">
@@ -88,7 +102,13 @@ function AdminLayout() {
               </Link>
             ))}
           </nav>
-          <span className="ml-auto hidden text-sm text-muted-foreground lg:inline">Signed in as Super Admin</span>
+          <button
+            type="button"
+            onClick={signOut}
+            className="ml-auto inline-flex h-9 shrink-0 items-center gap-2 rounded-md border border-border px-3 text-sm font-medium hover:bg-secondary"
+          >
+            <LogOut className="size-4" aria-hidden="true" /> Sign out
+          </button>
         </header>
         <main className="flex-1 p-4 lg:p-6">
           <Outlet />

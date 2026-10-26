@@ -1,8 +1,12 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { Plus } from "lucide-react";
-import { CATEGORIES, categoryName, fitmentLabel, formatAMD } from "@/data/catalog";
-import { PageHeader, Panel, Pill, RowActions, Table } from "@/components/admin/ui";
+import { CATEGORIES, categoryName, fitmentLabel, formatAMD, type Product } from "@/data/catalog";
+import { toast } from "sonner";
+import { PageHeader, Panel, Pill, Table } from "@/components/admin/ui";
+import { ProductForm } from "@/components/admin/ProductForm";
+import { deleteProduct, saveProduct, type ProductInput } from "@/lib/admin-products.functions";
 import { useProducts } from "@/lib/products";
 
 export const Route = createFileRoute("/admin/products")({
@@ -13,7 +17,36 @@ function AdminProducts() {
   const products = useProducts();
   const [q, setQ] = useState("");
   const [cat, setCat] = useState("");
-  const [form, setForm] = useState(false);
+  const [editing, setEditing] = useState<Product | "new" | null>(null);
+  const [saving, setSaving] = useState(false);
+  const router = useRouter();
+  const saveFn = useServerFn(saveProduct);
+  const deleteFn = useServerFn(deleteProduct);
+
+  const save = async (input: ProductInput) => {
+    setSaving(true);
+    try {
+      await saveFn({ data: input });
+      await router.invalidate();
+      toast.success(input.id ? "Product updated" : "Product added");
+      setEditing(null);
+    } catch (error) {
+      toast.error("Could not save the product", { description: errorMessage(error) });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const remove = async (p: Product) => {
+    if (!window.confirm(`Delete "${p.name}"? This cannot be undone.`)) return;
+    try {
+      await deleteFn({ data: { id: p.id } });
+      await router.invalidate();
+      toast.success("Product deleted");
+    } catch (error) {
+      toast.error("Could not delete the product", { description: errorMessage(error) });
+    }
+  };
 
   const rows = products.filter((p) => {
     if (cat && p.category !== cat) return false;
@@ -30,7 +63,7 @@ function AdminProducts() {
         action={
           <button
             type="button"
-            onClick={() => setForm((v) => !v)}
+            onClick={() => setEditing("new")}
             className="inline-flex h-11 items-center gap-2 rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground"
           >
             <Plus className="size-4" aria-hidden="true" /> Add product
@@ -38,47 +71,14 @@ function AdminProducts() {
         }
       />
 
-      {form ? (
-        <Panel className="mb-5 p-5">
-          <h2 className="text-lg font-bold">New product</h2>
-          <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            <Input label="Product name" />
-            <Select label="Category" options={CATEGORIES.map((c) => c.name)} />
-            <Input label="Brand" />
-            <Input label="Part number" />
-            <Input label="OEM number" />
-            <Input label="Price (AMD)" type="number" />
-            <Input label="Sale price (AMD)" type="number" />
-            <Select label="Condition" options={["New", "Used"]} />
-            <Input label="Stock" type="number" />
-            <Input label="Warranty" />
-            <Input label="Shipping estimate" />
-            <Input label="Images" type="file" />
-          </div>
-          <fieldset className="mt-4 rounded-md border border-border p-4">
-            <legend className="px-1 text-sm font-bold uppercase">Compatibility</legend>
-            <div className="grid gap-4 sm:grid-cols-4">
-              <Input label="Model" defaultValue="Grand Cherokee" />
-              <Input label="Year from" type="number" />
-              <Input label="Year to" type="number" />
-              <Select label="Generation" options={["WK", "WK2", "WL"]} />
-            </div>
-          </fieldset>
-          <div className="mt-4">
-            <label className="mb-1 block text-sm font-medium" htmlFor="desc">
-              Description
-            </label>
-            <textarea id="desc" rows={3} className="w-full rounded-md border border-input bg-card p-3 text-sm" />
-          </div>
-          <div className="mt-4 flex gap-3">
-            <button type="button" className="h-11 rounded-md bg-accent px-5 text-sm font-semibold text-accent-foreground">
-              Save product
-            </button>
-            <button type="button" onClick={() => setForm(false)} className="h-11 rounded-md border border-border px-5 text-sm font-semibold">
-              Cancel
-            </button>
-          </div>
-        </Panel>
+      {editing ? (
+        <ProductForm
+          key={editing === "new" ? "new" : editing.id}
+          product={editing === "new" ? null : editing}
+          saving={saving}
+          onSave={save}
+          onCancel={() => setEditing(null)}
+        />
       ) : null}
 
       <div className="mb-4 flex flex-wrap gap-3">
@@ -126,7 +126,17 @@ function AdminProducts() {
                 <Pill tone="good">Published</Pill>
               </td>
               <td className="p-3">
-                <RowActions items={["Edit", "View", "Duplicate", "Delete"]} />
+                <div className="flex flex-wrap gap-1.5">
+                  <button type="button" onClick={() => setEditing(p)} className={ACTION}>
+                    Edit
+                  </button>
+                  <Link to="/product/$slug" params={{ slug: p.slug }} target="_blank" className={ACTION}>
+                    View
+                  </Link>
+                  <button type="button" onClick={() => remove(p)} className={`${ACTION} text-destructive`}>
+                    Delete
+                  </button>
+                </div>
               </td>
             </tr>
           ))}
@@ -136,38 +146,16 @@ function AdminProducts() {
   );
 }
 
-function Input({
-  label,
-  type = "text",
-  defaultValue,
-}: {
-  label: string;
-  type?: string;
-  defaultValue?: string;
-}) {
-  const id = label.toLowerCase().replace(/\s+/g, "-");
-  return (
-    <div>
-      <label htmlFor={id} className="mb-1 block text-sm font-medium">
-        {label}
-      </label>
-      <input id={id} type={type} defaultValue={defaultValue} className="h-11 w-full rounded-md border border-input bg-card px-3 text-sm" />
-    </div>
-  );
-}
 
-function Select({ label, options }: { label: string; options: string[] }) {
-  const id = label.toLowerCase().replace(/\s+/g, "-");
-  return (
-    <div>
-      <label htmlFor={id} className="mb-1 block text-sm font-medium">
-        {label}
-      </label>
-      <select id={id} className="h-11 w-full rounded-md border border-input bg-card px-3 text-sm">
-        {options.map((o) => (
-          <option key={o}>{o}</option>
-        ))}
-      </select>
-    </div>
-  );
+const ACTION = "rounded-md border border-border px-2 py-1 text-xs font-medium hover:bg-secondary";
+
+// Server errors arrive as an Error; validation errors carry zod's JSON message.
+function errorMessage(error: unknown) {
+  const message = error instanceof Error ? error.message : String(error);
+  try {
+    const issues = JSON.parse(message) as { path?: string[]; message: string }[];
+    return issues.map((i) => (i.path?.length ? `${i.path.join(".")}: ${i.message}` : i.message)).join("; ");
+  } catch {
+    return message;
+  }
 }
