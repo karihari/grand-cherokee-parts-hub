@@ -1,9 +1,10 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
-import { PRODUCTS, formatAMD } from "@/data/catalog";
+import { formatAMD } from "@/data/catalog";
 import { useStore } from "@/lib/store";
 import { MyGarage } from "@/components/shop/MyGarage";
 import { cn } from "@/lib/utils";
+import { useProducts } from "@/lib/products";
 
 export const Route = createFileRoute("/account")({
   head: () => ({
@@ -161,7 +162,8 @@ function AccountPage() {
 }
 
 function ProductList({ title, ids }: { title: string; ids: string[] }) {
-  const items = PRODUCTS.filter((p) => ids.includes(p.id));
+  const products = useProducts();
+  const items = products.filter((p) => ids.includes(p.id));
   if (items.length === 0) {
     return (
       <div className="card-surface p-5 text-sm">

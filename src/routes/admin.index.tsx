@@ -1,16 +1,18 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Bar, BarChart, CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import { PRODUCTS, formatAMD } from "@/data/catalog";
+import { formatAMD } from "@/data/catalog";
 import { ADMIN_CUSTOMERS, ADMIN_ORDERS, ADMIN_SELLERS, SALES_SERIES } from "@/data/admin";
 import { PageHeader, Panel, Pill, Table, statusTone } from "@/components/admin/ui";
+import { useProducts } from "@/lib/products";
 
 export const Route = createFileRoute("/admin/")({
   component: AdminDashboard,
 });
 
 function AdminDashboard() {
+  const products = useProducts();
   const pending = ADMIN_ORDERS.filter((o) => o.status === "Pending").length;
-  const lowStock = PRODUCTS.filter((p) => p.stock <= 3);
+  const lowStock = products.filter((p) => p.stock <= 3);
   const todaySales = ADMIN_ORDERS.filter((o) => o.date === "2026-08-12").reduce((s, o) => s + o.amount, 0);
   const totalSales = SALES_SERIES.reduce((s, d) => s + d.sales, 0);
 
@@ -23,7 +25,7 @@ function AdminDashboard() {
         <Stat label="Total sales (7 days)" value={formatAMD(totalSales)} />
         <Stat label="Orders" value={String(ADMIN_ORDERS.length)} />
         <Stat label="Pending orders" value={String(pending)} tone />
-        <Stat label="Products" value={String(PRODUCTS.length)} />
+        <Stat label="Products" value={String(products.length)} />
         <Stat label="Customers" value={String(ADMIN_CUSTOMERS.length)} />
         <Stat label="Sellers" value={String(ADMIN_SELLERS.length)} />
         <Stat label="Low stock products" value={String(lowStock.length)} tone />

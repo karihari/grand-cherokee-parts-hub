@@ -14,6 +14,7 @@ import { useEffect, type ReactNode } from "react";
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { StoreProvider } from "@/lib/store";
+import { listProducts } from "@/lib/products.functions";
 import { Header } from "@/components/site/Header";
 import { Footer } from "@/components/site/Footer";
 import { MobileTabBar } from "@/components/site/MobileTabBar";
@@ -81,6 +82,9 @@ function ErrorComponent({ error, reset }: ErrorComponentProps) {
 }
 
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
+  loader: async () => ({ products: await listProducts() }),
+  // Products rarely change; reload them at most once a minute while browsing.
+  staleTime: 60_000,
   head: () => ({
     meta: [
       { charSet: "utf-8" },

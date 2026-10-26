@@ -1,8 +1,9 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Minus, Plus, Trash2 } from "lucide-react";
-import { PRODUCTS, formatAMD } from "@/data/catalog";
+import { formatAMD } from "@/data/catalog";
 import { useStore } from "@/lib/store";
 import { ContactButtons } from "@/components/shop/ContactButtons";
+import { findProduct, useProducts } from "@/lib/products";
 
 export const Route = createFileRoute("/cart")({
   head: () => ({
@@ -19,10 +20,12 @@ export const Route = createFileRoute("/cart")({
 const SHIPPING = 4500;
 
 function CartPage() {
+  const products = useProducts();
   const { cart, setQty, removeFromCart, cartSubtotal, toggleSaved, saved } = useStore();
-  const lines = cart
-    .map((l) => ({ line: l, product: PRODUCTS.find((p) => p.id === l.productId)! }))
-    .filter((x) => x.product);
+  const lines = cart.flatMap((l) => {
+    const product = findProduct(products, l.productId);
+    return product ? [{ line: l, product }] : [];
+  });
 
   if (lines.length === 0) {
     return (

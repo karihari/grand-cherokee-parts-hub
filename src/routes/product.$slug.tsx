@@ -11,15 +11,17 @@ import {
   Truck,
 } from "lucide-react";
 import { toast } from "sonner";
-import { PRODUCTS, formatAMD, fitmentLabel, getProduct, categoryName } from "@/data/catalog";
+import { formatAMD, fitmentLabel, categoryName } from "@/data/catalog";
 import { checkFit, useStore, vehicleLabel } from "@/lib/store";
 import { ContactButtons } from "@/components/shop/ContactButtons";
 import { ProductCard } from "@/components/shop/ProductCard";
 import { cn } from "@/lib/utils";
+import { useProducts } from "@/lib/products";
+import { getProductBySlug } from "@/lib/products.functions";
 
 export const Route = createFileRoute("/product/$slug")({
-  loader: ({ params }) => {
-    const product = getProduct(params.slug);
+  loader: async ({ params }) => {
+    const product = await getProductBySlug({ data: { slug: params.slug } });
     if (!product) throw notFound();
     return { product };
   },
@@ -51,6 +53,7 @@ export const Route = createFileRoute("/product/$slug")({
 });
 
 function ProductPage() {
+  const products = useProducts();
   const { product } = Route.useLoaderData();
   const { activeVehicle, addToCart, toggleWishlist, wishlist, toggleCompare, trackView } = useStore();
   const [zoom, setZoom] = useState(false);
@@ -62,7 +65,7 @@ function ProductPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [product.id]);
 
-  const related = PRODUCTS.filter((p) => p.category === product.category && p.id !== product.id).slice(0, 4);
+  const related = products.filter((p) => p.category === product.category && p.id !== product.id).slice(0, 4);
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8">

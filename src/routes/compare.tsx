@@ -1,7 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { PRODUCTS, formatAMD, fitmentLabel } from "@/data/catalog";
+import { formatAMD, fitmentLabel } from "@/data/catalog";
 import { checkFit, useStore } from "@/lib/store";
 import { FitBadge } from "@/components/shop/FitBadge";
+import { useProducts } from "@/lib/products";
 
 export const Route = createFileRoute("/compare")({
   head: () => ({
@@ -16,8 +17,9 @@ export const Route = createFileRoute("/compare")({
 });
 
 function ComparePage() {
+  const products = useProducts();
   const { compare, activeVehicle, toggleCompare } = useStore();
-  const items = PRODUCTS.filter((p) => compare.includes(p.id));
+  const items = products.filter((p) => compare.includes(p.id));
 
   if (items.length === 0) {
     return (

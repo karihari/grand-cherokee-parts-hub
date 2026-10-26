@@ -7,7 +7,8 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { PRODUCTS, type Product, type Fitment } from "@/data/catalog";
+import type { Product, Fitment } from "@/data/catalog";
+import { findProduct, useProducts } from "@/lib/products";
 
 export type Vehicle = { id: string; year: number; gen: "WK" | "WK2" | "WL"; engine: string };
 
@@ -55,6 +56,7 @@ type StoreContextValue = StoreState & {
 const StoreContext = createContext<StoreContextValue | null>(null);
 
 export function StoreProvider({ children }: { children: ReactNode }) {
+  const products = useProducts();
   const [state, setState] = useState<StoreState>(EMPTY);
 
   useEffect(() => {
@@ -85,7 +87,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const value = useMemo<StoreContextValue>(() => {
     const activeVehicle = state.vehicles.find((v) => v.id === state.activeVehicleId) ?? null;
     const cartSubtotal = state.cart.reduce((sum, line) => {
-      const product = PRODUCTS.find((p) => p.id === line.productId);
+      const product = findProduct(products, line.productId);
       return sum + (product ? product.price * line.qty : 0);
     }, 0);
 
@@ -137,7 +139,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       trackView: (id) =>
         setState((s) => ({ ...s, recent: [id, ...s.recent.filter((x) => x !== id)].slice(0, 8) })),
     };
-  }, [state, toggle]);
+  }, [products, state, toggle]);
 
   return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>;
 }

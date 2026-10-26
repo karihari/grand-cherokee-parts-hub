@@ -1,18 +1,20 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { PRODUCTS } from "@/data/catalog";
+
 import { PageHeader, Panel, Pill, Table } from "@/components/admin/ui";
+import { useProducts } from "@/lib/products";
 
 export const Route = createFileRoute("/admin/inventory")({ component: AdminInventory });
 
 function AdminInventory() {
-  const low = PRODUCTS.filter((p) => p.stock <= 3);
+  const products = useProducts();
+  const low = products.filter((p) => p.stock <= 3);
 
   return (
     <div>
       <PageHeader title="Inventory" subtitle={`${low.length} products are at or below the low-stock threshold of 3.`} />
       <Panel>
         <Table head={["Product", "SKU", "Stock", "Reserved", "Available", "Status", "Update"]}>
-          {PRODUCTS.map((p) => {
+          {products.map((p) => {
             const reserved = p.stock > 5 ? 2 : 0;
             return (
               <tr key={p.id} className="border-t border-border">

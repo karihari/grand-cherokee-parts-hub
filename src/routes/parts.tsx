@@ -2,17 +2,17 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { SlidersHorizontal, X } from "lucide-react";
 import {
-  BRANDS,
   CATEGORIES,
-  PRODUCTS,
-  SELLERS,
   categoryName,
   type Product,
+  brandsOf,
+  sellersOf,
 } from "@/data/catalog";
 import { checkFit, useStore } from "@/lib/store";
 import { ProductCard } from "@/components/shop/ProductCard";
 import { MyGarage } from "@/components/shop/MyGarage";
 import { cn } from "@/lib/utils";
+import { useProducts } from "@/lib/products";
 
 type Search = { q?: string | undefined; category?: string | undefined };
 
@@ -44,6 +44,7 @@ export const Route = createFileRoute("/parts")({
 type SortKey = "recommended" | "price-asc" | "price-desc" | "newest" | "rating";
 
 function PartsPage() {
+  const products = useProducts();
   const { q, category } = Route.useSearch();
   const { activeVehicle } = useStore();
 
@@ -60,7 +61,7 @@ function PartsPage() {
 
   const results = useMemo(() => {
     const term = (q ?? "").trim().toLowerCase();
-    let list = PRODUCTS.filter((p) => {
+    let list = products.filter((p) => {
       if (category && p.category !== category) return false;
       if (condition.length && !condition.includes(p.condition)) return false;
       if (origin.length && !origin.includes(p.origin)) return false;
@@ -97,7 +98,7 @@ function PartsPage() {
       }
     });
     return list;
-  }, [q, category, condition, origin, brands, sellers, inStockOnly, fitsOnly, maxPrice, minRating, sort, activeVehicle]);
+  }, [products, q, category, condition, origin, brands, sellers, inStockOnly, fitsOnly, maxPrice, minRating, sort, activeVehicle]);
 
   const title = category ? `Grand Cherokee ${categoryName(category)} Parts` : "Grand Cherokee Parts";
 
@@ -164,13 +165,13 @@ function PartsPage() {
       </FilterGroup>
 
       <FilterGroup title="Brand">
-        {BRANDS.map((b) => (
+        {brandsOf(products).map((b) => (
           <Check key={b} label={b} checked={brands.includes(b)} onChange={() => setBrands(toggle(brands, b))} />
         ))}
       </FilterGroup>
 
       <FilterGroup title="Seller">
-        {SELLERS.map((s) => (
+        {sellersOf(products).map((s) => (
           <Check key={s} label={s} checked={sellers.includes(s)} onChange={() => setSellers(toggle(sellers, s))} />
         ))}
       </FilterGroup>

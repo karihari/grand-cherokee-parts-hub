@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { CATEGORIES, PRODUCTS } from "@/data/catalog";
+import { CATEGORIES } from "@/data/catalog";
+import { useProducts } from "@/lib/products";
 
 export const Route = createFileRoute("/categories")({
   head: () => ({
@@ -18,6 +19,7 @@ export const Route = createFileRoute("/categories")({
 });
 
 function CategoriesPage() {
+  const products = useProducts();
   return (
     <div className="mx-auto max-w-7xl px-4 py-8">
       <h1 className="text-3xl font-bold">Grand Cherokee Parts</h1>
@@ -27,7 +29,7 @@ function CategoriesPage() {
 
       <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {CATEGORIES.map((c) => {
-          const count = PRODUCTS.filter((p) => p.category === c.slug).length;
+          const count = products.filter((p) => p.category === c.slug).length;
           return (
             <Link
               key={c.slug}

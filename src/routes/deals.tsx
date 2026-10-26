@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { PRODUCTS } from "@/data/catalog";
+
 import { ProductCard } from "@/components/shop/ProductCard";
+import { useProducts } from "@/lib/products";
 
 export const Route = createFileRoute("/deals")({
   head: () => ({
@@ -18,7 +19,8 @@ export const Route = createFileRoute("/deals")({
 });
 
 function DealsPage() {
-  const deals = PRODUCTS.filter((p) => p.oldPrice);
+  const products = useProducts();
+  const deals = products.filter((p) => p.oldPrice);
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8">

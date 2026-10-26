@@ -1,10 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { BRANDS, CATEGORIES, PRODUCTS } from "@/data/catalog";
+import { CATEGORIES, brandsOf } from "@/data/catalog";
 import { PageHeader, Panel, RowActions, Table } from "@/components/admin/ui";
+import { useProducts } from "@/lib/products";
 
 export const Route = createFileRoute("/admin/categories")({ component: AdminCategories });
 
 function AdminCategories() {
+  const products = useProducts();
   return (
     <div>
       <PageHeader
@@ -26,7 +28,7 @@ function AdminCategories() {
               </td>
               <td className="p-3 font-medium">{c.name}</td>
               <td className="p-3 text-muted-foreground">{c.blurb}</td>
-              <td className="p-3">{PRODUCTS.filter((p) => p.category === c.slug).length}</td>
+              <td className="p-3">{products.filter((p) => p.category === c.slug).length}</td>
               <td className="p-3">{i + 1}</td>
               <td className="p-3">
                 <RowActions items={["Edit", "Image", "Move up", "Delete"]} />
@@ -38,10 +40,10 @@ function AdminCategories() {
 
       <Panel className="mt-5">
         <Table head={["Brand", "Products", "Actions"]}>
-          {BRANDS.map((b) => (
+          {brandsOf(products).map((b) => (
             <tr key={b} className="border-t border-border">
               <td className="p-3 font-medium">{b}</td>
-              <td className="p-3">{PRODUCTS.filter((p) => p.brand === b).length}</td>
+              <td className="p-3">{products.filter((p) => p.brand === b).length}</td>
               <td className="p-3">
                 <RowActions items={["Edit", "Delete"]} />
               </td>

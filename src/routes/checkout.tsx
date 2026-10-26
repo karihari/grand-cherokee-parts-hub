@@ -1,9 +1,10 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { Check, CheckCircle2 } from "lucide-react";
-import { PRODUCTS, formatAMD } from "@/data/catalog";
+import { formatAMD } from "@/data/catalog";
 import { useStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
+import { findProduct, useProducts } from "@/lib/products";
 
 export const Route = createFileRoute("/checkout")({
   head: () => ({
@@ -31,6 +32,7 @@ type Form = {
 };
 
 function CheckoutPage() {
+  const products = useProducts();
   const { cart, cartSubtotal, clearCart } = useStore();
   const [step, setStep] = useState(0);
   const [placed, setPlaced] = useState<string | null>(null);
@@ -44,9 +46,10 @@ function CheckoutPage() {
     payment: "card",
   });
 
-  const lines = cart
-    .map((l) => ({ qty: l.qty, product: PRODUCTS.find((p) => p.id === l.productId)! }))
-    .filter((x) => x.product);
+  const lines = cart.flatMap((l) => {
+    const product = findProduct(products, l.productId);
+    return product ? [{ qty: l.qty, product }] : [];
+  });
   const total = cartSubtotal + SHIPPING;
   const set = (patch: Partial<Form>) => setForm((f) => ({ ...f, ...patch }));
 

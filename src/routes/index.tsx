@@ -1,10 +1,11 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowRight, BadgeCheck, PackageCheck, ShieldCheck, Truck } from "lucide-react";
 import heroImage from "@/assets/hero-grand-cherokee.jpg";
-import { CATEGORIES, PRODUCTS } from "@/data/catalog";
+import { CATEGORIES } from "@/data/catalog";
 import { VehicleSelector } from "@/components/shop/VehicleSelector";
 import { ProductCard } from "@/components/shop/ProductCard";
 import { MyGarage } from "@/components/shop/MyGarage";
+import { useProducts } from "@/lib/products";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -26,7 +27,8 @@ export const Route = createFileRoute("/")({
 });
 
 function Home() {
-  const featured = PRODUCTS.filter((p) => p.featured).slice(0, 4);
+  const products = useProducts();
+  const featured = products.filter((p) => p.featured).slice(0, 4);
 
   return (
     <div>

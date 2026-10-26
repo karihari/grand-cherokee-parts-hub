@@ -1,12 +1,14 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { SALES_SERIES } from "@/data/admin";
-import { CATEGORIES, PRODUCTS, formatAMD } from "@/data/catalog";
+import { CATEGORIES, formatAMD } from "@/data/catalog";
 import { PageHeader, Panel, Table } from "@/components/admin/ui";
+import { useProducts } from "@/lib/products";
 
 export const Route = createFileRoute("/admin/reports")({ component: AdminReports });
 
 function AdminReports() {
+  const products = useProducts();
   const revenue = SALES_SERIES.reduce((s, d) => s + d.sales, 0);
   const orders = SALES_SERIES.reduce((s, d) => s + d.orders, 0);
 
@@ -35,7 +37,7 @@ function AdminReports() {
       <Panel className="mt-5">
         <Table head={["Category", "Products", "Average price"]}>
           {CATEGORIES.map((c) => {
-            const items = PRODUCTS.filter((p) => p.category === c.slug);
+            const items = products.filter((p) => p.category === c.slug);
             const avg = items.length ? Math.round(items.reduce((s, p) => s + p.price, 0) / items.length) : 0;
             return (
               <tr key={c.slug} className="border-t border-border">

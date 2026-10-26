@@ -1,19 +1,21 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { Plus } from "lucide-react";
-import { CATEGORIES, PRODUCTS, categoryName, fitmentLabel, formatAMD } from "@/data/catalog";
+import { CATEGORIES, categoryName, fitmentLabel, formatAMD } from "@/data/catalog";
 import { PageHeader, Panel, Pill, RowActions, Table } from "@/components/admin/ui";
+import { useProducts } from "@/lib/products";
 
 export const Route = createFileRoute("/admin/products")({
   component: AdminProducts,
 });
 
 function AdminProducts() {
+  const products = useProducts();
   const [q, setQ] = useState("");
   const [cat, setCat] = useState("");
   const [form, setForm] = useState(false);
 
-  const rows = PRODUCTS.filter((p) => {
+  const rows = products.filter((p) => {
     if (cat && p.category !== cat) return false;
     if (!q) return true;
     const t = q.toLowerCase();
@@ -24,7 +26,7 @@ function AdminProducts() {
     <div>
       <PageHeader
         title="Products"
-        subtitle={`${PRODUCTS.length} listings · find any product in seconds`}
+        subtitle={`${products.length} listings · find any product in seconds`}
         action={
           <button
             type="button"
