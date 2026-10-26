@@ -1,12 +1,18 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
+import { useEffect, useState } from "react";
 import { formatAMD } from "@/data/catalog";
 import { useStore } from "@/lib/store";
 import { MyGarage } from "@/components/shop/MyGarage";
 import { cn } from "@/lib/utils";
 import { useProducts } from "@/lib/products";
+import { getOrderStatuses } from "@/lib/orders.functions";
+import { Pill, statusTone } from "@/components/admin/ui";
 
 export const Route = createFileRoute("/account")({
+  validateSearch: (search: Record<string, unknown>): { tab?: "orders" | undefined } => ({
+    tab: search["tab"] === "orders" ? "orders" : undefined,
+  }),
   head: () => ({
     meta: [
       { title: "My Account | GC Parts" },
@@ -31,14 +37,11 @@ const TABS = [
   "Settings",
 ] as const;
 
-const ORDERS = [
-  { id: "GC-482913", date: "2026-08-02", items: "Front Brake Disc ×2", total: 93000, status: "Delivered" },
-  { id: "GC-482744", date: "2026-07-21", items: "Oil Filter Housing", total: 118000, status: "Shipped" },
-  { id: "GC-482612", date: "2026-07-04", items: "Cabin Air Filter ×3", total: 23400, status: "Delivered" },
-];
-
 function AccountPage() {
-  const [tab, setTab] = useState<(typeof TABS)[number]>("My Grand Cherokees");
+  const search = Route.useSearch();
+  const [tab, setTab] = useState<(typeof TABS)[number]>(
+    search.tab === "orders" ? "My Orders" : "My Grand Cherokees",
+  );
   const { wishlist, recent, saved } = useStore();
 
   return (
@@ -77,36 +80,7 @@ function AccountPage() {
             </div>
           )}
 
-          {tab === "My Orders" && (
-            <div className="card-surface overflow-x-auto p-0">
-              <table className="w-full text-sm">
-                <thead className="bg-secondary text-left text-xs uppercase text-muted-foreground">
-                  <tr>
-                    <th className="p-3">Order</th>
-                    <th className="p-3">Date</th>
-                    <th className="p-3">Items</th>
-                    <th className="p-3">Total</th>
-                    <th className="p-3">Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {ORDERS.map((o) => (
-                    <tr key={o.id} className="border-t border-border">
-                      <td className="p-3 font-medium">{o.id}</td>
-                      <td className="p-3 text-muted-foreground">{o.date}</td>
-                      <td className="p-3">{o.items}</td>
-                      <td className="p-3 font-medium">{formatAMD(o.total)}</td>
-                      <td className="p-3">
-                        <span className="rounded-md bg-success/12 px-2 py-1 text-xs font-semibold text-success">
-                          {o.status}
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
+          {tab === "My Orders" && <MyOrders />}
 
           {(tab === "Wishlist" || tab === "Recently Viewed" || tab === "Saved Parts") && (
             <ProductList
@@ -157,6 +131,66 @@ function AccountPage() {
           )}
         </section>
       </div>
+    </div>
+  );
+}
+
+function MyOrders() {
+  const { orders } = useStore();
+  const getStatuses = useServerFn(getOrderStatuses);
+  const [statuses, setStatuses] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    if (orders.length === 0) return;
+    getStatuses({ data: { ids: orders.map((o) => o.id) } })
+      .then((rows) => setStatuses(Object.fromEntries(rows.map((r) => [r.id, r.status]))))
+      .catch((error: unknown) => console.error(error));
+  }, [orders, getStatuses]);
+
+  if (orders.length === 0) {
+    return (
+      <div className="card-surface p-5 text-sm">
+        <h2 className="text-lg font-bold">My Orders</h2>
+        <p className="mt-2 text-muted-foreground">
+          No orders from this device yet.{" "}
+          <Link to="/parts" className="font-semibold text-primary underline">
+            Browse parts
+          </Link>
+          .
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="card-surface overflow-x-auto p-0">
+      <table className="w-full text-sm">
+        <thead className="bg-secondary text-left text-xs uppercase text-muted-foreground">
+          <tr>
+            <th className="p-3">Order</th>
+            <th className="p-3">Date</th>
+            <th className="p-3">Items</th>
+            <th className="p-3">Total</th>
+            <th className="p-3">Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {orders.map((o) => {
+            const status = statuses[o.id] ?? "New";
+            return (
+              <tr key={o.id} className="border-t border-border">
+                <td className="p-3 font-medium">{o.id}</td>
+                <td className="p-3 whitespace-nowrap text-muted-foreground">{o.createdAt.slice(0, 10)}</td>
+                <td className="p-3">{o.items.map((i) => `${i.name} ×${i.qty}`).join(", ")}</td>
+                <td className="p-3 whitespace-nowrap font-medium">{formatAMD(o.total)}</td>
+                <td className="p-3">
+                  <Pill tone={statusTone(status)}>{status}</Pill>
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
     </div>
   );
 }

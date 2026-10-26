@@ -1,13 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { SlidersHorizontal, X } from "lucide-react";
-import {
-  CATEGORIES,
-  categoryName,
-  type Product,
-  brandsOf,
-  sellersOf,
-} from "@/data/catalog";
+import { CATEGORIES, categoryName, type Product } from "@/data/catalog";
 import { checkFit, useStore } from "@/lib/store";
 import { ProductCard } from "@/components/shop/ProductCard";
 import { MyGarage } from "@/components/shop/MyGarage";
@@ -29,7 +23,7 @@ export const Route = createFileRoute("/parts")({
       {
         name: "description",
         content:
-          "Browse Jeep Grand Cherokee parts by category, brand, condition and fitment. Compatible results are shown first.",
+          "Browse Jeep Grand Cherokee parts by category, price and fitment. Compatible results are shown first.",
       },
       { property: "og:title", content: "Grand Cherokee Parts Catalogue | GC Parts" },
       {
@@ -48,10 +42,6 @@ function PartsPage() {
   const { q, category } = Route.useSearch();
   const { activeVehicle } = useStore();
 
-  const [condition, setCondition] = useState<string[]>([]);
-  const [origin, setOrigin] = useState<string[]>([]);
-  const [brands, setBrands] = useState<string[]>([]);
-  const [sellers, setSellers] = useState<string[]>([]);
   const [inStockOnly, setInStockOnly] = useState(false);
   const [fitsOnly, setFitsOnly] = useState(false);
   const [maxPrice, setMaxPrice] = useState(500000);
@@ -63,10 +53,6 @@ function PartsPage() {
     const term = (q ?? "").trim().toLowerCase();
     let list = products.filter((p) => {
       if (category && p.category !== category) return false;
-      if (condition.length && !condition.includes(p.condition)) return false;
-      if (origin.length && !origin.includes(p.origin)) return false;
-      if (brands.length && !brands.includes(p.brand)) return false;
-      if (sellers.length && !sellers.includes(p.seller)) return false;
       if (inStockOnly && p.stock === 0) return false;
       if (p.price > maxPrice) return false;
       if (p.rating < minRating) return false;
@@ -98,7 +84,7 @@ function PartsPage() {
       }
     });
     return list;
-  }, [products, q, category, condition, origin, brands, sellers, inStockOnly, fitsOnly, maxPrice, minRating, sort, activeVehicle]);
+  }, [products, q, category, inStockOnly, fitsOnly, maxPrice, minRating, sort, activeVehicle]);
 
   const title = category ? `Grand Cherokee ${categoryName(category)} Parts` : "Grand Cherokee Parts";
 
@@ -150,30 +136,6 @@ function PartsPage() {
           onChange={(e) => setMaxPrice(Number(e.target.value))}
           className="w-full accent-[var(--color-primary)]"
         />
-      </FilterGroup>
-
-      <FilterGroup title="Condition">
-        {["New", "Used"].map((c) => (
-          <Check key={c} label={c} checked={condition.includes(c)} onChange={() => setCondition(toggle(condition, c))} />
-        ))}
-      </FilterGroup>
-
-      <FilterGroup title="OEM / Aftermarket">
-        {["OEM", "Aftermarket"].map((c) => (
-          <Check key={c} label={c} checked={origin.includes(c)} onChange={() => setOrigin(toggle(origin, c))} />
-        ))}
-      </FilterGroup>
-
-      <FilterGroup title="Brand">
-        {brandsOf(products).map((b) => (
-          <Check key={b} label={b} checked={brands.includes(b)} onChange={() => setBrands(toggle(brands, b))} />
-        ))}
-      </FilterGroup>
-
-      <FilterGroup title="Seller">
-        {sellersOf(products).map((s) => (
-          <Check key={s} label={s} checked={sellers.includes(s)} onChange={() => setSellers(toggle(sellers, s))} />
-        ))}
       </FilterGroup>
 
       <FilterGroup title="Availability">
@@ -296,10 +258,6 @@ function PartsPage() {
       ) : null}
     </div>
   );
-}
-
-function toggle(list: string[], value: string) {
-  return list.includes(value) ? list.filter((x) => x !== value) : [...list, value];
 }
 
 function FilterGroup({ title, children }: { title: string; children: React.ReactNode }) {

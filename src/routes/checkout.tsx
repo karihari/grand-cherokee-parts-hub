@@ -1,16 +1,20 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
-import { Check, CheckCircle2 } from "lucide-react";
+import { Check, CheckCircle2, Store } from "lucide-react";
+import { toast } from "sonner";
 import { formatAMD } from "@/data/catalog";
 import { useStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
 import { findProduct, useProducts } from "@/lib/products";
+import { placeOrder } from "@/lib/orders.functions";
+import { cleanLocalNumber, dialCode, PhoneInput, type PhoneCountry } from "@/components/shop/PhoneInput";
 
 export const Route = createFileRoute("/checkout")({
   head: () => ({
     meta: [
       { title: "Checkout | GC Parts" },
-      { name: "description", content: "Four short steps: details, delivery, payment, review." },
+      { name: "description", content: "Three short steps: details, payment, review." },
       { property: "og:title", content: "Checkout | GC Parts" },
       { property: "og:description", content: "Fast checkout for Grand Cherokee parts." },
     ],
@@ -18,40 +22,85 @@ export const Route = createFileRoute("/checkout")({
   component: CheckoutPage,
 });
 
-const SHIPPING = 4500;
-const STEPS = ["Your details", "Delivery", "Payment", "Review"];
+const STEPS = ["Your details", "Payment", "Review"];
+const LAST_STEP = STEPS.length - 1;
+
+// There is no delivery: orders are picked up and paid for at the shop.
+const PAYMENT_OPTIONS = [
+  ["cash", "Cash at pickup"],
+  ["card", "Card at pickup"],
+] as const;
 
 type Form = {
   name: string;
+  phoneCountry: PhoneCountry;
   phone: string;
   email: string;
-  address: string;
-  city: string;
-  postcode: string;
-  payment: "card" | "cash" | "transfer";
+  payment: "card" | "cash";
 };
 
 function CheckoutPage() {
   const products = useProducts();
-  const { cart, cartSubtotal, clearCart } = useStore();
+  const { cart, cartSubtotal, clearCart, addOrder } = useStore();
+  const router = useRouter();
+  const placeOrderFn = useServerFn(placeOrder);
   const [step, setStep] = useState(0);
   const [placed, setPlaced] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [phoneError, setPhoneError] = useState("");
   const [form, setForm] = useState<Form>({
     name: "",
+    phoneCountry: "AM",
     phone: "",
     email: "",
-    address: "",
-    city: "",
-    postcode: "",
-    payment: "card",
+    payment: "cash",
   });
 
   const lines = cart.flatMap((l) => {
     const product = findProduct(products, l.productId);
     return product ? [{ qty: l.qty, product }] : [];
   });
-  const total = cartSubtotal + SHIPPING;
   const set = (patch: Partial<Form>) => setForm((f) => ({ ...f, ...patch }));
+  const localPhone = cleanLocalNumber(form.phone);
+  const fullPhone = `${dialCode(form.phoneCountry)} ${localPhone}`;
+  const paymentLabel = PAYMENT_OPTIONS.find(([value]) => value === form.payment)![1];
+
+  const submit = async () => {
+    setSubmitting(true);
+    try {
+      const result = await placeOrderFn({
+        data: {
+          name: form.name,
+          phone: fullPhone,
+          email: form.email,
+          payment: form.payment,
+          items: lines.map(({ product, qty }) => ({ productId: product.id, qty })),
+        },
+      });
+      if (!result.ok) {
+        toast.error("Could not place the order", { description: result.error });
+        return;
+      }
+      addOrder({
+        id: result.id,
+        createdAt: result.createdAt,
+        items: result.items.map((i) => ({ name: i.name, qty: i.qty })),
+        total: result.total,
+      });
+      clearCart();
+      setPlaced(result.id);
+      window.scrollTo({ top: 0 });
+      // Reload Products so the new stock levels show.
+      void router.invalidate();
+    } catch (error) {
+      console.error(error);
+      toast.error("Could not place the order", {
+        description: "Please try again, or message us on WhatsApp.",
+      });
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   if (placed) {
     return (
@@ -59,11 +108,11 @@ function CheckoutPage() {
         <CheckCircle2 className="mx-auto size-14 text-success" aria-hidden="true" />
         <h1 className="mt-4 text-3xl font-bold">Order confirmed</h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          Order <span className="font-semibold text-foreground">{placed}</span> is confirmed. We message you on
-          WhatsApp with tracking as soon as it ships.
+          Order <span className="font-semibold text-foreground">{placed}</span> is confirmed. We will call or
+          message you when it is ready to pick up. You pay when you collect it.
         </p>
         <div className="mt-6 flex justify-center gap-3">
-          <Link to="/account" className="h-11 rounded-md bg-primary px-5 text-sm font-semibold leading-[2.75rem] text-primary-foreground">
+          <Link to="/account" search={{ tab: "orders" }} className="h-11 rounded-md bg-primary px-5 text-sm font-semibold leading-[2.75rem] text-primary-foreground">
             View my orders
           </Link>
           <Link to="/parts" className="h-11 rounded-md border border-border px-5 text-sm font-semibold leading-[2.75rem]">
@@ -111,45 +160,50 @@ function CheckoutPage() {
           className="card-surface space-y-4 p-5"
           onSubmit={(e) => {
             e.preventDefault();
-            if (step < 3) {
+            if (step === 0 && (localPhone.length < 5 || localPhone.length > 14)) {
+              setPhoneError("Enter a valid phone number.");
+              return;
+            }
+            if (step < LAST_STEP) {
               setStep(step + 1);
               return;
             }
-            const id = `GC-${Math.floor(100000 + Math.random() * 899999)}`;
-            clearCart();
-            setPlaced(id);
+            if (!submitting) void submit();
           }}
         >
           {step === 0 && (
             <>
               <h2 className="text-lg font-bold">Customer information</h2>
               <Field id="name" label="Full name" value={form.name} onChange={(v) => set({ name: v })} required />
-              <Field id="phone" label="Phone" type="tel" value={form.phone} onChange={(v) => set({ phone: v })} required />
+              <div>
+                <label htmlFor="phone" className="mb-1 block text-sm font-medium">
+                  Phone
+                </label>
+                <PhoneInput
+                  id="phone"
+                  country={form.phoneCountry}
+                  number={form.phone}
+                  onCountryChange={(iso) => set({ phoneCountry: iso })}
+                  onNumberChange={(v) => {
+                    set({ phone: v });
+                    setPhoneError("");
+                  }}
+                  required
+                />
+                {phoneError ? <p className="mt-1 text-sm text-destructive">{phoneError}</p> : null}
+              </div>
               <Field id="email" label="Email" type="email" value={form.email} onChange={(v) => set({ email: v })} required />
             </>
           )}
 
           {step === 1 && (
             <>
-              <h2 className="text-lg font-bold">Delivery address</h2>
-              <Field id="address" label="Street address" value={form.address} onChange={(v) => set({ address: v })} required />
-              <div className="grid gap-4 sm:grid-cols-2">
-                <Field id="city" label="City" value={form.city} onChange={(v) => set({ city: v })} required />
-                <Field id="postcode" label="Postcode" value={form.postcode} onChange={(v) => set({ postcode: v })} />
-              </div>
-            </>
-          )}
-
-          {step === 2 && (
-            <>
               <h2 className="text-lg font-bold">Payment</h2>
-              {(
-                [
-                  ["card", "Card on delivery / online card"],
-                  ["cash", "Cash on delivery"],
-                  ["transfer", "Bank transfer"],
-                ] as const
-              ).map(([value, label]) => (
+              <p className="flex items-start gap-2 rounded-md bg-muted p-3 text-sm">
+                <Store className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
+                We do not deliver. We will contact you when your order is ready, and you pay when you pick it up.
+              </p>
+              {PAYMENT_OPTIONS.map(([value, label]) => (
                 <label key={value} className="flex items-center gap-3 rounded-md border border-border p-3 text-sm">
                   <input
                     type="radio"
@@ -164,15 +218,14 @@ function CheckoutPage() {
             </>
           )}
 
-          {step === 3 && (
+          {step === 2 && (
             <>
               <h2 className="text-lg font-bold">Review your order</h2>
               <dl className="grid gap-2 text-sm sm:grid-cols-2">
                 <Review label="Name" value={form.name} />
-                <Review label="Phone" value={form.phone} />
+                <Review label="Phone" value={fullPhone} />
                 <Review label="Email" value={form.email} />
-                <Review label="Address" value={`${form.address}, ${form.city} ${form.postcode}`} />
-                <Review label="Payment" value={form.payment} />
+                <Review label="Payment" value={paymentLabel} />
               </dl>
               <ul className="mt-3 divide-y divide-border text-sm">
                 {lines.map(({ product, qty }) => (
@@ -192,6 +245,7 @@ function CheckoutPage() {
               <button
                 type="button"
                 onClick={() => setStep(step - 1)}
+                disabled={submitting}
                 className="h-12 rounded-md border border-border px-5 text-sm font-semibold"
               >
                 Back
@@ -199,9 +253,10 @@ function CheckoutPage() {
             )}
             <button
               type="submit"
-              className="h-12 flex-1 rounded-md bg-accent text-sm font-semibold text-accent-foreground"
+              disabled={submitting}
+              className="h-12 flex-1 rounded-md bg-accent text-sm font-semibold text-accent-foreground disabled:opacity-60"
             >
-              {step === 3 ? "Place Order" : "Continue"}
+              {step === LAST_STEP ? (submitting ? "Placing order…" : "Place Order") : "Continue"}
             </button>
           </div>
         </form>
@@ -210,16 +265,8 @@ function CheckoutPage() {
           <h2 className="text-lg font-bold">Summary</h2>
           <dl className="mt-4 space-y-2 text-sm">
             <div className="flex justify-between">
-              <dt className="text-muted-foreground">Subtotal</dt>
-              <dd className="font-medium">{formatAMD(cartSubtotal)}</dd>
-            </div>
-            <div className="flex justify-between">
-              <dt className="text-muted-foreground">Shipping</dt>
-              <dd className="font-medium">{formatAMD(SHIPPING)}</dd>
-            </div>
-            <div className="flex justify-between border-t border-border pt-2">
               <dt className="font-bold">Total</dt>
-              <dd className="font-display text-xl font-bold">{formatAMD(total)}</dd>
+              <dd className="font-display text-xl font-bold">{formatAMD(cartSubtotal)}</dd>
             </div>
           </dl>
         </aside>

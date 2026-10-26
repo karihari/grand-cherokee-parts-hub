@@ -11,7 +11,7 @@ export function Footer() {
           </p>
           <p className="mt-2 text-sm text-surface-foreground/70">
             Spare parts and accessories for the Jeep Grand Cherokee only — WK, WK2 and WL. Genuine, OEM
-            and aftermarket, checked for fitment before dispatch.
+            and aftermarket, checked for fitment before pickup.
           </p>
         </div>
         <nav aria-label="Footer" className="flex flex-wrap gap-x-8 gap-y-2 text-sm">

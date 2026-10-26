@@ -1,19 +1,25 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Bar, BarChart, CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { formatAMD } from "@/data/catalog";
-import { ADMIN_CUSTOMERS, ADMIN_ORDERS, ADMIN_SELLERS, SALES_SERIES } from "@/data/admin";
+import { ADMIN_CUSTOMERS, ADMIN_SELLERS, SALES_SERIES } from "@/data/admin";
 import { PageHeader, Panel, Pill, Table, statusTone } from "@/components/admin/ui";
 import { useProducts } from "@/lib/products";
+import { listOrders } from "@/lib/orders.functions";
 
 export const Route = createFileRoute("/admin/")({
+  loader: () => listOrders(),
   component: AdminDashboard,
 });
 
 function AdminDashboard() {
   const products = useProducts();
-  const pending = ADMIN_ORDERS.filter((o) => o.status === "Pending").length;
+  const orders = Route.useLoaderData();
+  const open = orders.filter((o) => o.status === "New" || o.status === "Ready for pickup").length;
   const lowStock = products.filter((p) => p.stock <= 3);
-  const todaySales = ADMIN_ORDERS.filter((o) => o.date === "2026-08-12").reduce((s, o) => s + o.amount, 0);
+  const today = new Date().toDateString();
+  const todaySales = orders
+    .filter((o) => o.status !== "Cancelled" && new Date(o.createdAt).toDateString() === today)
+    .reduce((s, o) => s + o.total, 0);
   const totalSales = SALES_SERIES.reduce((s, d) => s + d.sales, 0);
 
   return (
@@ -23,8 +29,8 @@ function AdminDashboard() {
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <Stat label="Today's sales" value={formatAMD(todaySales)} />
         <Stat label="Total sales (7 days)" value={formatAMD(totalSales)} />
-        <Stat label="Orders" value={String(ADMIN_ORDERS.length)} />
-        <Stat label="Pending orders" value={String(pending)} tone />
+        <Stat label="Orders" value={String(orders.length)} />
+        <Stat label="Open orders" value={String(open)} tone />
         <Stat label="Products" value={String(products.length)} />
         <Stat label="Customers" value={String(ADMIN_CUSTOMERS.length)} />
         <Stat label="Sellers" value={String(ADMIN_SELLERS.length)} />
@@ -66,11 +72,11 @@ function AdminDashboard() {
         <Panel>
           <h2 className="p-4 pb-0 font-bold">Recent orders</h2>
           <Table head={["Order", "Customer", "Amount", "Status"]}>
-            {ADMIN_ORDERS.slice(0, 5).map((o) => (
+            {orders.slice(0, 5).map((o) => (
               <tr key={o.id} className="border-t border-border">
                 <td className="p-3 font-medium">{o.id}</td>
-                <td className="p-3">{o.customer}</td>
-                <td className="p-3">{formatAMD(o.amount)}</td>
+                <td className="p-3">{o.name}</td>
+                <td className="p-3">{formatAMD(o.total)}</td>
                 <td className="p-3">
                   <Pill tone={statusTone(o.status)}>{o.status}</Pill>
                 </td>

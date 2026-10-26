@@ -1,15 +1,13 @@
 import { Link } from "@tanstack/react-router";
-import { Heart, GitCompareArrows, ShoppingCart, Star, Truck } from "lucide-react";
+import { Heart, GitCompareArrows, ShoppingCart, Star } from "lucide-react";
 import { toast } from "sonner";
 import { formatAMD, fitmentLabel, type Product } from "@/data/catalog";
-import { checkFit, useStore } from "@/lib/store";
-import { FitBadge } from "@/components/shop/FitBadge";
+import { useStore } from "@/lib/store";
 import { ContactButtons } from "@/components/shop/ContactButtons";
 import { cn } from "@/lib/utils";
 
 export function ProductCard({ product }: { product: Product }) {
-  const { activeVehicle, addToCart, toggleWishlist, wishlist, toggleCompare, compare } = useStore();
-  const fit = checkFit(product, activeVehicle);
+  const { addToCart, toggleWishlist, wishlist, toggleCompare, compare } = useStore();
   const wished = wishlist.includes(product.id);
   const compared = compare.includes(product.id);
 
@@ -90,10 +88,7 @@ export function ProductCard({ product }: { product: Product }) {
           </div>
         </dl>
 
-        <div className="space-y-1">
-          <FitBadge result={fit} />
-          <p className="text-xs text-muted-foreground">{product.fits.map(fitmentLabel).join(" · ")}</p>
-        </div>
+        <p className="text-xs text-muted-foreground">{product.fits.map(fitmentLabel).join(" · ")}</p>
 
         <div className="mt-auto space-y-3">
           <div className="flex items-end justify-between gap-2">
@@ -107,9 +102,6 @@ export function ProductCard({ product }: { product: Product }) {
               <p className={product.stock > 0 ? "font-medium text-success" : "font-medium text-destructive"}>
                 {product.stock > 0 ? `In stock · ${product.stock}` : "Out of stock"}
               </p>
-              <p className="mt-0.5 inline-flex items-center gap-1">
-                <Truck className="size-3" aria-hidden="true" /> {product.delivery}
-              </p>
             </div>
           </div>
 
@@ -117,8 +109,6 @@ export function ProductCard({ product }: { product: Product }) {
             <Star className="size-3.5 fill-accent text-accent" aria-hidden="true" />
             <span className="font-medium text-foreground">{product.rating.toFixed(1)}</span>
             <span>({product.reviews})</span>
-            <span aria-hidden="true">·</span>
-            <span>{product.seller}</span>
           </p>
 
           <div className="flex items-center gap-2">

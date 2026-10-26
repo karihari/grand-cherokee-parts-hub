@@ -17,8 +17,6 @@ export const Route = createFileRoute("/cart")({
   component: CartPage,
 });
 
-const SHIPPING = 4500;
-
 function CartPage() {
   const products = useProducts();
   const { cart, setQty, removeFromCart, cartSubtotal, toggleSaved, saved } = useStore();
@@ -38,8 +36,6 @@ function CartPage() {
       </div>
     );
   }
-
-  const total = cartSubtotal + SHIPPING;
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-8">
@@ -108,12 +104,9 @@ function CartPage() {
         <aside className="card-surface h-fit p-5">
           <h2 className="text-lg font-bold">Order summary</h2>
           <dl className="mt-4 space-y-2 text-sm">
-            <Row label="Subtotal" value={formatAMD(cartSubtotal)} />
-            <Row label="Shipping" value={formatAMD(SHIPPING)} />
-            <div className="border-t border-border pt-2">
-              <Row label="Total" value={formatAMD(total)} strong />
-            </div>
+            <Row label="Total" value={formatAMD(cartSubtotal)} strong />
           </dl>
+          <p className="mt-2 text-xs text-muted-foreground">Pick up and pay at our shop. No delivery.</p>
           <Link
             to="/checkout"
             className="mt-5 inline-flex h-12 w-full items-center justify-center rounded-md bg-accent text-sm font-semibold text-accent-foreground"

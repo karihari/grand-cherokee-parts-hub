@@ -14,6 +14,14 @@ export type Vehicle = { id: string; year: number; gen: "WK" | "WK2" | "WL"; engi
 
 export type CartLine = { productId: string; qty: number };
 
+// A summary of an order placed from this browser. The live status comes from the server.
+export type PlacedOrder = {
+  id: string;
+  createdAt: string;
+  items: { name: string; qty: number }[];
+  total: number;
+};
+
 type StoreState = {
   vehicles: Vehicle[];
   activeVehicleId: string | null;
@@ -22,6 +30,7 @@ type StoreState = {
   compare: string[];
   saved: string[];
   recent: string[];
+  orders: PlacedOrder[];
 };
 
 const EMPTY: StoreState = {
@@ -32,6 +41,7 @@ const EMPTY: StoreState = {
   compare: [],
   saved: [],
   recent: [],
+  orders: [],
 };
 
 const KEY = "gcparts.store.v1";
@@ -45,6 +55,7 @@ type StoreContextValue = StoreState & {
   setQty: (productId: string, qty: number) => void;
   removeFromCart: (productId: string) => void;
   clearCart: () => void;
+  addOrder: (order: PlacedOrder) => void;
   toggleWishlist: (productId: string) => void;
   toggleCompare: (productId: string) => void;
   toggleSaved: (productId: string) => void;
@@ -133,6 +144,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       removeFromCart: (productId) =>
         setState((s) => ({ ...s, cart: s.cart.filter((l) => l.productId !== productId) })),
       clearCart: () => setState((s) => ({ ...s, cart: [] })),
+      addOrder: (order) => setState((s) => ({ ...s, orders: [order, ...s.orders] })),
       toggleWishlist: (id) => toggle("wishlist", id),
       toggleCompare: (id) => toggle("compare", id),
       toggleSaved: (id) => toggle("saved", id),

@@ -1,5 +1,6 @@
 import { boolean, integer, jsonb, pgTable, real, text, timestamp } from "drizzle-orm/pg-core";
 import type { Fitment } from "../data/catalog";
+import { ORDER_STATUSES, type OrderItem } from "../data/orders";
 
 export const products = pgTable("products", {
   id: text("id").primaryKey(),
@@ -31,3 +32,20 @@ export const products = pgTable("products", {
 });
 
 export type ProductRow = typeof products.$inferSelect;
+
+export const orders = pgTable("orders", {
+  id: text("id").primaryKey(),
+  name: text("name").notNull(),
+  phone: text("phone").notNull(),
+  email: text("email").notNull(),
+  // There is no delivery: the customer pays when they pick the order up.
+  payment: text("payment", { enum: ["card", "cash"] }).notNull(),
+  // Name and price are copied at order time so later Product edits do not change the order.
+  items: jsonb("items").$type<OrderItem[]>().notNull(),
+  // Whole drams.
+  total: integer("total").notNull(),
+  status: text("status", { enum: ORDER_STATUSES }).notNull().default("New"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export type OrderRow = typeof orders.$inferSelect;

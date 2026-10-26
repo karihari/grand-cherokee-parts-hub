@@ -58,8 +58,8 @@ export function Pill({ children, tone = "muted" }: { children: React.ReactNode; 
 }
 
 export function statusTone(status: string): keyof typeof TONE {
-  if (["Delivered", "Paid", "Active", "Approved", "Published", "Resolved"].includes(status)) return "good";
-  if (["Pending", "Waiting", "Scheduled", "Processing"].includes(status)) return "warn";
+  if (["Delivered", "Completed", "Paid", "Active", "Approved", "Published", "Resolved"].includes(status)) return "good";
+  if (["Pending", "Ready for pickup", "Waiting", "Scheduled", "Processing"].includes(status)) return "warn";
   if (["Cancelled", "Refunded", "Returned", "Blocked", "Hidden"].includes(status)) return "bad";
   if (["Shipped", "Confirmed", "New", "Open"].includes(status)) return "info";
   return "muted";

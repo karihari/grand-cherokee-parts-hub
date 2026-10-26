@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowRight, BadgeCheck, PackageCheck, ShieldCheck, Truck } from "lucide-react";
+import { ArrowRight, BadgeCheck, PackageCheck, Store, Wallet } from "lucide-react";
 import heroImage from "@/assets/hero-grand-cherokee.jpg";
 import { CATEGORIES } from "@/data/catalog";
 import { VehicleSelector } from "@/components/shop/VehicleSelector";
@@ -66,8 +66,8 @@ function Home() {
             <ul className="mt-8 grid gap-3 text-sm text-surface-foreground/80 sm:grid-cols-2">
               <Feature icon={BadgeCheck}>Fitment checked on every listing</Feature>
               <Feature icon={PackageCheck}>New, used and OEM stock</Feature>
-              <Feature icon={Truck}>Delivery estimate before you buy</Feature>
-              <Feature icon={ShieldCheck}>Warranty stated on every part</Feature>
+              <Feature icon={Store}>Order online, pick up at our shop</Feature>
+              <Feature icon={Wallet}>Pay by cash or card at pickup</Feature>
             </ul>
           </div>
 

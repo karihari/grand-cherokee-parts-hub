@@ -1,18 +1,9 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import {
-  AlertTriangle,
-  CheckCircle2,
-  GitCompareArrows,
-  Heart,
-  ShieldCheck,
-  ShoppingCart,
-  Star,
-  Truck,
-} from "lucide-react";
+import { GitCompareArrows, Heart, ShoppingCart, Star } from "lucide-react";
 import { toast } from "sonner";
 import { formatAMD, fitmentLabel, categoryName } from "@/data/catalog";
-import { checkFit, useStore, vehicleLabel } from "@/lib/store";
+import { useStore } from "@/lib/store";
 import { ContactButtons } from "@/components/shop/ContactButtons";
 import { ProductCard } from "@/components/shop/ProductCard";
 import { cn } from "@/lib/utils";
@@ -30,7 +21,7 @@ export const Route = createFileRoute("/product/$slug")({
       return { meta: [{ title: "Part unavailable | GC Parts" }, { name: "robots", content: "noindex" }] };
     }
     const { product } = loaderData;
-    const description = `${product.name} — ${product.brand}, part ${product.partNumber}, OEM ${product.oemNumber}. ${product.condition} ${product.origin} part for Jeep Grand Cherokee.`;
+    const description = `${product.name} for Jeep Grand Cherokee. ${categoryName(product.category)} part from GC Parts.`;
     return {
       meta: [
         { title: `${product.name} | Grand Cherokee ${categoryName(product.category)} | GC Parts` },
@@ -55,9 +46,8 @@ export const Route = createFileRoute("/product/$slug")({
 function ProductPage() {
   const products = useProducts();
   const { product } = Route.useLoaderData();
-  const { activeVehicle, addToCart, toggleWishlist, wishlist, toggleCompare, trackView } = useStore();
+  const { addToCart, toggleWishlist, wishlist, toggleCompare, trackView } = useStore();
   const [zoom, setZoom] = useState(false);
-  const fit = checkFit(product, activeVehicle);
   const wished = wishlist.includes(product.id);
 
   useEffect(() => {
@@ -128,60 +118,16 @@ function ProductPage() {
             <span>ID {product.id}</span>
           </p>
 
-          <div
-            className={cn(
-              "mt-5 rounded-lg border p-4",
-              fit === "fits"
-                ? "border-success/40 bg-success/10"
-                : fit === "verify"
-                  ? "border-warning/50 bg-warning/12"
-                  : "border-border bg-muted",
-            )}
-          >
-            <div className="flex items-start gap-3">
-              {fit === "fits" ? (
-                <CheckCircle2 className="mt-0.5 size-5 shrink-0 text-success" aria-hidden="true" />
-              ) : (
-                <AlertTriangle className="mt-0.5 size-5 shrink-0 text-warning-foreground" aria-hidden="true" />
-              )}
-              <div>
-                <p className="font-display text-lg font-bold uppercase tracking-wide">
-                  {fit === "fits"
-                    ? "Fits your Grand Cherokee"
-                    : fit === "verify"
-                      ? "Compatibility needs verification"
-                      : "Select your Grand Cherokee"}
-                </p>
-                {activeVehicle ? (
-                  <p className="text-sm font-medium">{vehicleLabel(activeVehicle)}</p>
-                ) : (
-                  <p className="text-sm">
-                    <Link to="/models" className="font-semibold text-primary underline">
-                      Choose year, generation and engine
-                    </Link>{" "}
-                    to confirm fit instantly.
-                  </p>
-                )}
-                <ul className="mt-2 space-y-0.5 text-xs text-muted-foreground">
-                  {product.fits.map((f) => (
-                    <li key={`${f.gen}-${f.from}`}>Fits {fitmentLabel(f)}</li>
-                  ))}
-                </ul>
-                {fit === "verify" ? (
-                  <p className="mt-2 text-sm font-medium">Contact us to confirm compatibility.</p>
-                ) : null}
-              </div>
+          {product.fits.length ? (
+            <div className="mt-5 text-sm">
+              <p className="font-semibold">Fits</p>
+              <ul className="mt-1 space-y-0.5 text-muted-foreground">
+                {product.fits.map((f) => (
+                  <li key={`${f.gen}-${f.from}`}>{fitmentLabel(f)}</li>
+                ))}
+              </ul>
             </div>
-          </div>
-
-          <dl className="mt-5 grid grid-cols-2 gap-3 text-sm">
-            <Spec label="Part number" value={product.partNumber} />
-            <Spec label="OEM number" value={product.oemNumber} />
-            <Spec label="Condition" value={product.condition} />
-            <Spec label="Type" value={product.origin} />
-            <Spec label="Warranty" value={product.warranty} />
-            <Spec label="Delivery" value={product.delivery} />
-          </dl>
+          ) : null}
 
           <div className="card-surface mt-5 p-4">
             <div className="flex items-end justify-between gap-3">
@@ -241,20 +187,6 @@ function ProductPage() {
             </div>
           </div>
 
-          <div className="card-surface mt-5 p-4 text-sm">
-            <p className="font-semibold">Seller: {product.seller}</p>
-            <p className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-muted-foreground">
-              <span className="inline-flex items-center gap-1">
-                <Star className="size-4 fill-accent text-accent" aria-hidden="true" /> {product.sellerRating} seller rating
-              </span>
-              <span className="inline-flex items-center gap-1">
-                <Truck className="size-4" aria-hidden="true" /> Ships in {product.delivery}
-              </span>
-              <span className="inline-flex items-center gap-1">
-                <ShieldCheck className="size-4" aria-hidden="true" /> {product.warranty} warranty
-              </span>
-            </p>
-          </div>
         </div>
       </div>
 
@@ -296,11 +228,3 @@ function ProductPage() {
   );
 }
 
-function Spec({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-md border border-border p-3">
-      <dt className="text-xs uppercase tracking-wide text-muted-foreground">{label}</dt>
-      <dd className="mt-0.5 font-semibold">{value}</dd>
-    </div>
-  );
-}
