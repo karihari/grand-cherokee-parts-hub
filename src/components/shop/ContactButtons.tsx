@@ -29,7 +29,7 @@ export function ContactButtons({
           <MessageCircle className="size-4" aria-hidden="true" />
         </a>
         <a
-          href={telegramLink(message())}
+          href={telegramLink()}
           target="_blank"
           rel="noopener noreferrer"
           aria-label={`Ask about ${product.name} on Telegram`}
@@ -52,7 +52,7 @@ export function ContactButtons({
         <MessageCircle className="size-4" aria-hidden="true" /> WhatsApp
       </a>
       <a
-        href={telegramLink(message())}
+        href={telegramLink()}
         target="_blank"
         rel="noopener noreferrer"
         className="inline-flex h-11 items-center justify-center gap-2 rounded-md border border-telegram/40 bg-telegram/10 text-sm font-semibold text-telegram transition-colors hover:bg-telegram/20"

@@ -20,7 +20,7 @@ export function FloatingContact() {
         <MessageCircle className="size-5" aria-hidden="true" />
       </a>
       <a
-        href={telegramLink(message)}
+        href={telegramLink()}
         target="_blank"
         rel="noopener noreferrer"
         aria-label="Chat with us on Telegram"

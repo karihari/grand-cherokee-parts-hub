@@ -2,7 +2,7 @@ import { formatAMD, type Product } from "@/data/catalog";
 import { vehicleLabel, type Vehicle } from "@/lib/store";
 
 export const WHATSAPP_NUMBER = "37455050602";
-export const TELEGRAM_USERNAME = "gcparts_support";
+export const TELEGRAM_USERNAME = "gcparts_support_bot";
 export const PHONE_DISPLAY = "+374 55 050 602";
 
 export function productEnquiry(product: Product, vehicle: Vehicle | null, url?: string) {
@@ -25,8 +25,9 @@ export function whatsappLink(message: string) {
   return `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
 }
 
-export function telegramLink(message: string) {
-  return `https://t.me/${TELEGRAM_USERNAME}?text=${encodeURIComponent(message)}`;
+// Telegram bots ignore a prefilled ?text=, so the link just opens the bot chat.
+export function telegramLink() {
+  return `https://t.me/${TELEGRAM_USERNAME}`;
 }
 
 export function productUrl(slug: string) {

@@ -57,7 +57,7 @@ function ContactPage() {
           </div>
         </a>
         <a
-          href={telegramLink(message)}
+          href={telegramLink()}
           target="_blank"
           rel="noopener noreferrer"
           className="card-surface flex items-center gap-3 p-4 hover:shadow-[var(--shadow-lift)]"
