@@ -52,7 +52,7 @@ function AdminProducts() {
     if (cat && p.category !== cat) return false;
     if (!q) return true;
     const t = q.toLowerCase();
-    return [p.name, p.partNumber, p.oemNumber, p.brand].join(" ").toLowerCase().includes(t);
+    return [p.name, p.partNumber, p.brand].join(" ").toLowerCase().includes(t);
   });
 
   return (
@@ -113,7 +113,7 @@ function AdminProducts() {
               </td>
               <td className="p-3">
                 <p className="font-medium">{p.name}</p>
-                <p className="text-xs text-muted-foreground">{p.brand} · {p.condition} · {p.origin}</p>
+                <p className="text-xs text-muted-foreground">{p.brand}</p>
               </td>
               <td className="p-3 whitespace-nowrap">{p.partNumber}</td>
               <td className="p-3">{categoryName(p.category)}</td>

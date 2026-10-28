@@ -89,18 +89,11 @@ export type Product = {
   category: string;
   brand: string;
   partNumber: string;
-  oemNumber: string;
   price: number;
   oldPrice?: number;
-  condition: "New" | "Used";
-  origin: "OEM" | "Aftermarket";
   stock: number;
   rating: number;
   reviews: number;
-  seller: string;
-  sellerRating: number;
-  delivery: string;
-  warranty: string;
   image: string;
   description: string;
   fits: Fitment[];
@@ -130,10 +123,6 @@ export function categoryName(slug: string) {
 
 export function brandsOf(products: Product[]) {
   return Array.from(new Set(products.map((x) => x.brand))).sort();
-}
-
-export function sellersOf(products: Product[]) {
-  return Array.from(new Set(products.map((x) => x.seller))).sort();
 }
 
 export function formatAMD(value: number) {

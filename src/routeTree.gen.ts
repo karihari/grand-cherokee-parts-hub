@@ -35,6 +35,7 @@ import { Route as AdminSellersRouteImport } from './routes/admin.sellers'
 import { Route as AdminSettingsRouteImport } from './routes/admin.settings'
 import { Route as AdminVehiclesRouteImport } from './routes/admin.vehicles'
 import { Route as AdminLoginRouteImport } from './routes/admin_.login'
+import { Route as ImagesIdRouteImport } from './routes/images.$id'
 import { Route as ProductSlugRouteImport } from './routes/product.$slug'
 
 const IndexRoute = IndexRouteImport.update({
@@ -167,6 +168,11 @@ const AdminLoginRoute = AdminLoginRouteImport.update({
   path: '/admin/login',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ImagesIdRoute = ImagesIdRouteImport.update({
+  id: '/images/$id',
+  path: '/images/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ProductSlugRoute = ProductSlugRouteImport.update({
   id: '/product/$slug',
   path: '/product/$slug',
@@ -199,6 +205,7 @@ export interface FileRoutesByFullPath {
   '/admin/settings': typeof AdminSettingsRoute
   '/admin/vehicles': typeof AdminVehiclesRoute
   '/admin/login': typeof AdminLoginRoute
+  '/images/$id': typeof ImagesIdRoute
   '/product/$slug': typeof ProductSlugRoute
   '/admin/': typeof AdminIndexRoute
 }
@@ -227,6 +234,7 @@ export interface FileRoutesByTo {
   '/admin/settings': typeof AdminSettingsRoute
   '/admin/vehicles': typeof AdminVehiclesRoute
   '/admin/login': typeof AdminLoginRoute
+  '/images/$id': typeof ImagesIdRoute
   '/product/$slug': typeof ProductSlugRoute
   '/admin': typeof AdminIndexRoute
 }
@@ -257,6 +265,7 @@ export interface FileRoutesById {
   '/admin/settings': typeof AdminSettingsRoute
   '/admin/vehicles': typeof AdminVehiclesRoute
   '/admin_/login': typeof AdminLoginRoute
+  '/images/$id': typeof ImagesIdRoute
   '/product/$slug': typeof ProductSlugRoute
   '/admin/': typeof AdminIndexRoute
 }
@@ -288,6 +297,7 @@ export interface FileRouteTypes {
     | '/admin/settings'
     | '/admin/vehicles'
     | '/admin/login'
+    | '/images/$id'
     | '/product/$slug'
     | '/admin/'
   fileRoutesByTo: FileRoutesByTo
@@ -316,6 +326,7 @@ export interface FileRouteTypes {
     | '/admin/settings'
     | '/admin/vehicles'
     | '/admin/login'
+    | '/images/$id'
     | '/product/$slug'
     | '/admin'
   id:
@@ -345,6 +356,7 @@ export interface FileRouteTypes {
     | '/admin/settings'
     | '/admin/vehicles'
     | '/admin_/login'
+    | '/images/$id'
     | '/product/$slug'
     | '/admin/'
   fileRoutesById: FileRoutesById
@@ -363,6 +375,7 @@ export interface RootRouteChildren {
   PartsRoute: typeof PartsRoute
   WishlistRoute: typeof WishlistRoute
   AdminLoginRoute: typeof AdminLoginRoute
+  ImagesIdRoute: typeof ImagesIdRoute
   ProductSlugRoute: typeof ProductSlugRoute
 }
 
@@ -550,6 +563,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminLoginRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/images/$id': {
+      id: '/images/$id'
+      path: '/images/$id'
+      fullPath: '/images/$id'
+      preLoaderRoute: typeof ImagesIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/product/$slug': {
       id: '/product/$slug'
       path: '/product/$slug'
@@ -608,6 +628,7 @@ const rootRouteChildren: RootRouteChildren = {
   PartsRoute: PartsRoute,
   WishlistRoute: WishlistRoute,
   AdminLoginRoute: AdminLoginRoute,
+  ImagesIdRoute: ImagesIdRoute,
   ProductSlugRoute: ProductSlugRoute,
 }
 export const routeTree = rootRouteImport

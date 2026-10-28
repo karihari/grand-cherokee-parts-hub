@@ -4,7 +4,7 @@ import { z } from "zod";
 import { CATEGORIES, type Fitment } from "@/data/catalog";
 import { requireAdmin } from "@/server/auth.server";
 import { getDb } from "@/server/db.server";
-import { products } from "@/server/schema";
+import { productImages, products } from "@/server/schema";
 
 const fitmentSchema = z
   .object({
@@ -22,15 +22,9 @@ export const productInputSchema = z
     category: z.enum(CATEGORIES.map((c) => c.slug) as [string, ...string[]]),
     brand: z.string().trim().min(1).max(80),
     partNumber: z.string().trim().min(1).max(80),
-    oemNumber: z.string().trim().max(80),
     price: z.number().int().min(0).max(100_000_000),
     oldPrice: z.number().int().min(0).max(100_000_000).nullable(),
-    condition: z.enum(["New", "Used"]),
-    origin: z.enum(["OEM", "Aftermarket"]),
     stock: z.number().int().min(0).max(100_000),
-    seller: z.string().trim().min(1).max(80),
-    delivery: z.string().trim().min(1).max(60),
-    warranty: z.string().trim().min(1).max(60),
     image: z.string().trim().min(1).max(500),
     description: z.string().trim().max(4000),
     fits: z.array(fitmentSchema).max(20),
@@ -118,4 +112,25 @@ export const deleteProduct = createServerFn({ method: "POST" })
     const db = dbOrThrow();
     await db.delete(products).where(eq(products.id, data.id));
     return { ok: true as const };
+  });
+
+// Accepts a data URL ("data:image/jpeg;base64,...") and returns the URL to store on the Product.
+export const uploadProductImage = createServerFn({ method: "POST" })
+  .validator((data: unknown) =>
+    z
+      .object({
+        dataUrl: z
+          .string()
+          .max(4_000_000)
+          .regex(/^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/),
+      })
+      .parse(data),
+  )
+  .handler(async ({ data }) => {
+    await requireAdmin();
+    const db = dbOrThrow();
+    const [, contentType, base64] = /^data:([^;]+);base64,(.*)$/.exec(data.dataUrl)!;
+    const id = crypto.randomUUID().replace(/-/g, "");
+    await db.insert(productImages).values({ id, contentType: contentType!, data: base64! });
+    return { url: `/images/${id}` };
   });

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Plus, Trash2 } from "lucide-react";
 import { CATEGORIES, GENERATIONS, PRODUCT_IMAGES, type Product } from "@/data/catalog";
-import type { ProductInput } from "@/lib/admin-products.functions";
+import { uploadProductImage, type ProductInput } from "@/lib/admin-products.functions";
 import { Panel } from "@/components/admin/ui";
 
 type FitRow = { gen: "WK" | "WK2" | "WL"; from: string; to: string; engines: string };
@@ -11,15 +11,9 @@ type FormState = {
   category: string;
   brand: string;
   partNumber: string;
-  oemNumber: string;
   price: string;
   oldPrice: string;
-  condition: "New" | "Used";
-  origin: "OEM" | "Aftermarket";
   stock: string;
-  seller: string;
-  delivery: string;
-  warranty: string;
   imageKey: string;
   imageUrl: string;
   description: string;
@@ -27,7 +21,7 @@ type FormState = {
   fits: FitRow[];
 };
 
-const CUSTOM_IMAGE = "__url";
+const CUSTOM_IMAGE = "__upload";
 
 function imageKeyOf(url: string) {
   return Object.keys(PRODUCT_IMAGES).find((k) => PRODUCT_IMAGES[k] === url);
@@ -40,15 +34,9 @@ function initialState(product: Product | null): FormState {
       category: CATEGORIES[0]?.slug ?? "",
       brand: "",
       partNumber: "",
-      oemNumber: "",
       price: "",
       oldPrice: "",
-      condition: "New",
-      origin: "OEM",
       stock: "1",
-      seller: "GC Parts",
-      delivery: "2–4 days",
-      warranty: "12 months",
       imageKey: "engine",
       imageUrl: "",
       description: "",
@@ -62,15 +50,9 @@ function initialState(product: Product | null): FormState {
     category: product.category,
     brand: product.brand,
     partNumber: product.partNumber,
-    oemNumber: product.oemNumber,
     price: String(product.price),
     oldPrice: product.oldPrice != null ? String(product.oldPrice) : "",
-    condition: product.condition,
-    origin: product.origin,
     stock: String(product.stock),
-    seller: product.seller,
-    delivery: product.delivery,
-    warranty: product.warranty,
     imageKey: key ?? CUSTOM_IMAGE,
     imageUrl: key ? "" : product.image,
     description: product.description,
@@ -90,15 +72,9 @@ function toInput(f: FormState, id: string | undefined): ProductInput {
     category: f.category,
     brand: f.brand,
     partNumber: f.partNumber,
-    oemNumber: f.oemNumber,
     price: Number(f.price),
     oldPrice: f.oldPrice.trim() ? Number(f.oldPrice) : null,
-    condition: f.condition,
-    origin: f.origin,
     stock: Number(f.stock),
-    seller: f.seller,
-    delivery: f.delivery,
-    warranty: f.warranty,
     image: f.imageKey === CUSTOM_IMAGE ? f.imageUrl : f.imageKey,
     description: f.description,
     featured: f.featured,
@@ -131,6 +107,22 @@ export function ProductForm({
   const setFit = (i: number, patch: Partial<FitRow>) =>
     setF((s) => ({ ...s, fits: s.fits.map((r, j) => (j === i ? { ...r, ...patch } : r)) }));
 
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+
+  async function upload(file: File) {
+    setUploading(true);
+    setUploadError(null);
+    try {
+      const { url } = await uploadProductImage({ data: { dataUrl: await resizeImage(file) } });
+      set({ imageUrl: url });
+    } catch (err) {
+      setUploadError(err instanceof Error ? err.message : "Upload failed");
+    } finally {
+      setUploading(false);
+    }
+  }
+
   const previewSrc = f.imageKey === CUSTOM_IMAGE ? f.imageUrl : PRODUCT_IMAGES[f.imageKey];
 
   return (
@@ -138,6 +130,10 @@ export function ProductForm({
       <form
         onSubmit={(e) => {
           e.preventDefault();
+          if (f.imageKey === CUSTOM_IMAGE && !f.imageUrl) {
+            setUploadError("Choose a photo first");
+            return;
+          }
           onSave(toInput(f, product?.id));
         }}
       >
@@ -157,8 +153,6 @@ export function ProductForm({
             onChange={(v) => set({ partNumber: v })}
             required
           />
-          <Field label="OEM number" value={f.oemNumber} onChange={(v) => set({ oemNumber: v })} />
-          <Field label="Seller" value={f.seller} onChange={(v) => set({ seller: v })} required />
           <Field
             label="Price (AMD)"
             type="number"
@@ -180,53 +174,31 @@ export function ProductForm({
             required
           />
           <SelectField
-            label="Condition"
-            value={f.condition}
-            onChange={(v) => set({ condition: v as FormState["condition"] })}
-            options={[
-              ["New", "New"],
-              ["Used", "Used"],
-            ]}
-          />
-          <SelectField
-            label="OEM or Aftermarket"
-            value={f.origin}
-            onChange={(v) => set({ origin: v as FormState["origin"] })}
-            options={[
-              ["OEM", "OEM (original Mopar)"],
-              ["Aftermarket", "Aftermarket"],
-            ]}
-          />
-          <Field
-            label="Warranty"
-            value={f.warranty}
-            onChange={(v) => set({ warranty: v })}
-            required
-          />
-          <Field
-            label="Delivery estimate"
-            value={f.delivery}
-            onChange={(v) => set({ delivery: v })}
-            required
-          />
-          <SelectField
             label="Image"
             value={f.imageKey}
             onChange={(v) => set({ imageKey: v })}
             options={[
               ...Object.keys(PRODUCT_IMAGES).map((k): [string, string] => [k, `Stock photo: ${k}`]),
-              [CUSTOM_IMAGE, "Image link (URL)"],
+              [CUSTOM_IMAGE, "Upload from computer"],
             ]}
           />
           {f.imageKey === CUSTOM_IMAGE ? (
-            <Field
-              label="Image link"
-              type="url"
-              value={f.imageUrl}
-              onChange={(v) => set({ imageUrl: v })}
-              placeholder="https://…"
-              required
-            />
+            <label className="block">
+              <span className="mb-1 block text-sm font-medium">Photo</span>
+              <input
+                type="file"
+                accept="image/*"
+                disabled={uploading}
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) void upload(file);
+                }}
+                className="block w-full text-sm file:mr-3 file:h-11 file:rounded-md file:border file:border-border file:bg-card file:px-4 file:text-sm file:font-medium"
+              />
+              <span className="mt-1 block text-xs text-muted-foreground">
+                {uploading ? "Uploading…" : (uploadError ?? (f.imageUrl ? "" : "Choose a photo"))}
+              </span>
+            </label>
           ) : null}
           {previewSrc ? (
             <img
@@ -318,7 +290,7 @@ export function ProductForm({
         <div className="mt-4 flex gap-3">
           <button
             type="submit"
-            disabled={saving}
+            disabled={saving || uploading}
             className="h-11 rounded-md bg-accent px-5 text-sm font-semibold text-accent-foreground disabled:opacity-60"
           >
             {saving ? "Saving…" : "Save product"}
@@ -334,6 +306,24 @@ export function ProductForm({
       </form>
     </Panel>
   );
+}
+
+const MAX_IMAGE_SIDE = 1200;
+
+// Shrinks the photo to at most 1200px on the long side and re-encodes it as JPEG,
+// so phone photos of several MB become ~200 KB before upload.
+async function resizeImage(file: File): Promise<string> {
+  const bitmap = await createImageBitmap(file);
+  const scale = Math.min(1, MAX_IMAGE_SIDE / Math.max(bitmap.width, bitmap.height));
+  const canvas = document.createElement("canvas");
+  canvas.width = Math.round(bitmap.width * scale);
+  canvas.height = Math.round(bitmap.height * scale);
+  const ctx = canvas.getContext("2d")!;
+  ctx.fillStyle = "#fff";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+  bitmap.close();
+  return canvas.toDataURL("image/jpeg", 0.85);
 }
 
 function Field({

@@ -36,13 +36,9 @@ function ComparePage() {
 
   const rows: [string, (p: (typeof items)[number]) => React.ReactNode][] = [
     ["Price", (p) => <span className="font-display text-lg font-bold">{formatAMD(p.price)}</span>],
-    ["Condition", (p) => p.condition],
     ["Brand", (p) => p.brand],
     ["Part number", (p) => p.partNumber],
-    ["OEM number", (p) => p.oemNumber],
     ["Fits", (p) => <span className="text-xs text-muted-foreground">{p.fits.map(fitmentLabel).join(" · ")}</span>],
-    ["Warranty", (p) => p.warranty],
-    ["Seller", (p) => p.seller],
     ["Rating", (p) => `${p.rating.toFixed(1)} (${p.reviews})`],
   ];
 

@@ -57,14 +57,6 @@ export function ProductCard({ product }: { product: Product }) {
             <GitCompareArrows className="size-4" aria-hidden="true" />
           </button>
         </div>
-        <div className="absolute left-2 top-2 flex flex-wrap gap-1.5">
-          <span className="rounded-md bg-surface px-2 py-1 text-[11px] font-semibold uppercase tracking-wide text-surface-foreground">
-            {product.condition}
-          </span>
-          <span className="rounded-md bg-accent px-2 py-1 text-[11px] font-semibold uppercase tracking-wide text-accent-foreground">
-            {product.origin}
-          </span>
-        </div>
       </div>
 
       <div className="flex flex-1 flex-col gap-3 p-4">
@@ -81,10 +73,6 @@ export function ProductCard({ product }: { product: Product }) {
           <div>
             <dt className="inline">Part № </dt>
             <dd className="inline font-medium text-foreground">{product.partNumber}</dd>
-          </div>
-          <div>
-            <dt className="inline">OEM № </dt>
-            <dd className="inline font-medium text-foreground">{product.oemNumber}</dd>
           </div>
         </dl>
 

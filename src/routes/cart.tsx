@@ -57,7 +57,7 @@ function CartPage() {
                   {product.name}
                 </Link>
                 <p className="text-xs text-muted-foreground">
-                  {product.brand} · Part № {product.partNumber} · {product.condition}
+                  {product.brand} · Part № {product.partNumber}
                 </p>
                 <div className="mt-3 flex flex-wrap items-center gap-3">
                   <div className="inline-flex items-center rounded-md border border-border">

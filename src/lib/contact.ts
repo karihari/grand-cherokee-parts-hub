@@ -12,7 +12,6 @@ export function productEnquiry(product: Product, vehicle: Vehicle | null, url?: 
     `Product: ${product.name}`,
     `Product ID: ${product.id}`,
     `Part Number: ${product.partNumber}`,
-    `OEM Number: ${product.oemNumber}`,
     `Price: ${formatAMD(product.price)}`,
     `Vehicle: ${vehicle ? vehicleLabel(vehicle) : "not selected yet"}`,
   ];

@@ -58,7 +58,7 @@ function PartsPage() {
       if (p.rating < minRating) return false;
       if (fitsOnly && checkFit(p, activeVehicle) !== "fits") return false;
       if (term) {
-        const haystack = [p.name, p.brand, p.partNumber, p.oemNumber, p.category, p.description]
+        const haystack = [p.name, p.brand, p.partNumber, p.category, p.description]
           .join(" ")
           .toLowerCase();
         if (!haystack.includes(term)) return false;

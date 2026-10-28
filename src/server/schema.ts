@@ -9,19 +9,12 @@ export const products = pgTable("products", {
   category: text("category").notNull(),
   brand: text("brand").notNull(),
   partNumber: text("part_number").notNull(),
-  oemNumber: text("oem_number").notNull(),
   // Whole drams; the shop has a single currency (AMD).
   price: integer("price").notNull(),
   oldPrice: integer("old_price"),
-  condition: text("condition", { enum: ["New", "Used"] }).notNull(),
-  origin: text("origin", { enum: ["OEM", "Aftermarket"] }).notNull(),
   stock: integer("stock").notNull().default(0),
   rating: real("rating").notNull().default(0),
   reviews: integer("reviews").notNull().default(0),
-  seller: text("seller").notNull(),
-  sellerRating: real("seller_rating").notNull().default(0),
-  delivery: text("delivery").notNull(),
-  warranty: text("warranty").notNull(),
   // A key of PRODUCT_IMAGES or a full image URL.
   image: text("image").notNull(),
   description: text("description").notNull(),
@@ -32,6 +25,15 @@ export const products = pgTable("products", {
 });
 
 export type ProductRow = typeof products.$inferSelect;
+
+// Photos the Admin uploads from their computer, served at /images/<id>.
+export const productImages = pgTable("product_images", {
+  id: text("id").primaryKey(),
+  contentType: text("content_type").notNull(),
+  // Base64 of the image bytes; photos are resized in the browser before upload.
+  data: text("data").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
 
 export const orders = pgTable("orders", {
   id: text("id").primaryKey(),
