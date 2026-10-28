@@ -1,12 +1,12 @@
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
-import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { Plus } from "lucide-react";
 import { CATEGORIES, categoryName, fitmentLabel, formatAMD, type Product } from "@/data/catalog";
 import { toast } from "sonner";
 import { PageHeader, Panel, Pill, Table } from "@/components/admin/ui";
 import { ProductForm } from "@/components/admin/ProductForm";
-import { deleteProduct, saveProduct, type ProductInput } from "@/lib/admin-products.functions";
+import { createProduct, deleteProduct, updateProduct, type ProductInput } from "@/lib/api/admin";
+import { errorText } from "@/lib/api/errors";
 import { useProducts } from "@/lib/products";
 
 export const Route = createFileRoute("/admin/products")({
@@ -20,18 +20,18 @@ function AdminProducts() {
   const [editing, setEditing] = useState<Product | "new" | null>(null);
   const [saving, setSaving] = useState(false);
   const router = useRouter();
-  const saveFn = useServerFn(saveProduct);
-  const deleteFn = useServerFn(deleteProduct);
 
   const save = async (input: ProductInput) => {
     setSaving(true);
+    const existing = editing !== "new" ? editing : null;
     try {
-      await saveFn({ data: input });
+      if (existing) await updateProduct(existing.id, input);
+      else await createProduct(input);
       await router.invalidate();
-      toast.success(input.id ? "Product updated" : "Product added");
+      toast.success(existing ? "Product updated" : "Product added");
       setEditing(null);
     } catch (error) {
-      toast.error("Could not save the product", { description: errorMessage(error) });
+      toast.error("Could not save the product", { description: errorText(error) });
     } finally {
       setSaving(false);
     }
@@ -40,11 +40,11 @@ function AdminProducts() {
   const remove = async (p: Product) => {
     if (!window.confirm(`Delete "${p.name}"? This cannot be undone.`)) return;
     try {
-      await deleteFn({ data: { id: p.id } });
+      await deleteProduct(p.id);
       await router.invalidate();
       toast.success("Product deleted");
     } catch (error) {
-      toast.error("Could not delete the product", { description: errorMessage(error) });
+      toast.error("Could not delete the product", { description: errorText(error) });
     }
   };
 
@@ -148,14 +148,3 @@ function AdminProducts() {
 
 
 const ACTION = "rounded-md border border-border px-2 py-1 text-xs font-medium hover:bg-secondary";
-
-// Server errors arrive as an Error; validation errors carry zod's JSON message.
-function errorMessage(error: unknown) {
-  const message = error instanceof Error ? error.message : String(error);
-  try {
-    const issues = JSON.parse(message) as { path?: string[]; message: string }[];
-    return issues.map((i) => (i.path?.length ? `${i.path.join(".")}: ${i.message}` : i.message)).join("; ");
-  } catch {
-    return message;
-  }
-}

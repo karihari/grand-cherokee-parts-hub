@@ -1,5 +1,5 @@
 import { createFileRoute, Link, Outlet, redirect, useRouter } from "@tanstack/react-router";
-import { useServerFn } from "@tanstack/react-start";
+import { useEffect } from "react";
 import {
   BarChart3,
   Boxes,
@@ -14,14 +14,24 @@ import {
   ShoppingBag,
   Star,
   Store,
+  UserCog,
   Users,
+  ShieldCheck,
 } from "lucide-react";
-import { adminLogout, getAdminSession } from "@/lib/auth.functions";
+import { getMe, logout } from "@/lib/api/admin";
+import { setSessionLostHandler } from "@/lib/api/client";
 
 export const Route = createFileRoute("/admin")({
+  // The auth cookies belong to the API, so only the browser can prove who is signed in.
+  // Admin pages therefore render in the browser only, like the LPMS single-page app.
+  ssr: false,
   beforeLoad: async ({ location }) => {
-    const { isAdmin } = await getAdminSession();
-    if (!isAdmin) throw redirect({ to: "/admin/login", search: { redirect: location.href } });
+    try {
+      // Also refreshes an expired access token on the way (see lib/api/client.ts).
+      return { user: await getMe() };
+    } catch {
+      throw redirect({ to: "/admin/login", search: { redirect: location.href } });
+    }
   },
   head: () => ({
     meta: [
@@ -49,13 +59,30 @@ const LINKS = [
   { to: "/admin/promotions", label: "Promotions", icon: Percent },
   { to: "/admin/reports", label: "Reports", icon: BarChart3 },
   { to: "/admin/settings", label: "Settings", icon: Settings },
+  { to: "/admin/users", label: "Admin users", icon: UserCog, adminOnly: true },
+  { to: "/admin/account", label: "My account", icon: ShieldCheck },
 ] as const;
 
 function AdminLayout() {
   const router = useRouter();
-  const logout = useServerFn(adminLogout);
+  const { user } = Route.useRouteContext();
+  const links = LINKS.filter((l) => !("adminOnly" in l) || user.role === "admin");
+
+  // If the session ends while the panel is open (signed out elsewhere, password changed,
+  // account disabled), the next API call lands here instead of failing silently.
+  useEffect(() => {
+    setSessionLostHandler(() => {
+      void router.navigate({
+        to: "/admin/login",
+        search: { redirect: window.location.pathname + window.location.search },
+      });
+    });
+    return () => setSessionLostHandler(null);
+  }, [router]);
+
   const signOut = async () => {
-    await logout();
+    // Clear cookies on the server even if the network call fails half way.
+    await logout().catch(() => undefined);
     await router.navigate({ to: "/admin/login", search: { redirect: undefined } });
   };
 
@@ -68,7 +95,7 @@ function AdminLayout() {
           </span>
         </Link>
         <nav aria-label="Admin" className="flex-1 space-y-1 overflow-auto p-3">
-          {LINKS.map((l) => (
+          {links.map((l) => (
             <Link
               key={l.to}
               to={l.to}
@@ -90,7 +117,7 @@ function AdminLayout() {
         <header className="flex h-16 items-center gap-3 border-b border-border bg-card px-4">
           <span className="font-display text-lg font-bold uppercase lg:hidden">GC Parts Admin</span>
           <nav aria-label="Admin sections" className="flex gap-2 overflow-x-auto lg:hidden">
-            {LINKS.map((l) => (
+            {links.map((l) => (
               <Link
                 key={l.to}
                 to={l.to}
@@ -102,10 +129,16 @@ function AdminLayout() {
               </Link>
             ))}
           </nav>
+          <span className="ml-auto hidden text-right text-xs leading-tight sm:block">
+            <span className="block font-semibold">{user.name}</span>
+            <span className="text-muted-foreground">
+              {user.email} · {user.role === "admin" ? "Admin" : "Staff"}
+            </span>
+          </span>
           <button
             type="button"
             onClick={signOut}
-            className="ml-auto inline-flex h-9 shrink-0 items-center gap-2 rounded-md border border-border px-3 text-sm font-medium hover:bg-secondary"
+            className="ml-auto inline-flex h-9 shrink-0 items-center gap-2 rounded-md border border-border px-3 text-sm font-medium hover:bg-secondary sm:ml-0"
           >
             <LogOut className="size-4" aria-hidden="true" /> Sign out
           </button>

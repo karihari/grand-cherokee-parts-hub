@@ -1,12 +1,11 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
 import { formatAMD } from "@/data/catalog";
 import { useStore } from "@/lib/store";
 import { MyGarage } from "@/components/shop/MyGarage";
 import { cn } from "@/lib/utils";
 import { useProducts } from "@/lib/products";
-import { getOrderStatuses } from "@/lib/orders.functions";
+import { getOrderStatuses } from "@/lib/api/shop";
 import { Pill, statusTone } from "@/components/admin/ui";
 
 export const Route = createFileRoute("/account")({
@@ -137,15 +136,14 @@ function AccountPage() {
 
 function MyOrders() {
   const { orders } = useStore();
-  const getStatuses = useServerFn(getOrderStatuses);
   const [statuses, setStatuses] = useState<Record<string, string>>({});
 
   useEffect(() => {
     if (orders.length === 0) return;
-    getStatuses({ data: { ids: orders.map((o) => o.id) } })
+    getOrderStatuses(orders.map((o) => o.id))
       .then((rows) => setStatuses(Object.fromEntries(rows.map((r) => [r.id, r.status]))))
       .catch((error: unknown) => console.error(error));
-  }, [orders, getStatuses]);
+  }, [orders]);
 
   if (orders.length === 0) {
     return (

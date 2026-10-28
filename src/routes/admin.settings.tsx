@@ -1,8 +1,7 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
-import { ROLES } from "@/data/admin";
 import { PHONE_DISPLAY, TELEGRAM_USERNAME } from "@/lib/contact";
-import { PageHeader, Panel, Table } from "@/components/admin/ui";
+import { PageHeader, Panel } from "@/components/admin/ui";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/admin/settings")({ component: AdminSettings });
@@ -33,16 +32,16 @@ function AdminSettings() {
       </div>
 
       {tab === "Users & Roles" ? (
-        <Panel>
-          <Table head={["Role", "People", "Permissions"]}>
-            {ROLES.map((r) => (
-              <tr key={r.role} className="border-t border-border">
-                <td className="p-3 font-medium">{r.role}</td>
-                <td className="p-3">{r.people}</td>
-                <td className="p-3 text-muted-foreground">{r.permissions}</td>
-              </tr>
-            ))}
-          </Table>
+        <Panel className="p-5 text-sm">
+          Admin accounts and roles are managed on the{" "}
+          <Link to="/admin/users" className="font-semibold text-primary underline">
+            Admin users
+          </Link>{" "}
+          page. Your own password and devices are under{" "}
+          <Link to="/admin/account" className="font-semibold text-primary underline">
+            My account
+          </Link>
+          .
         </Panel>
       ) : (
         <Panel className="p-5">

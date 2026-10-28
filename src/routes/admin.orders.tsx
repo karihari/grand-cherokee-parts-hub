@@ -1,37 +1,34 @@
 import { createFileRoute, useRouter } from "@tanstack/react-router";
-import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { toast } from "sonner";
 import { formatAMD } from "@/data/catalog";
 import { ORDER_STATUSES, type OrderStatus } from "@/data/orders";
 import { PageHeader, Panel, Pill, Table, statusTone } from "@/components/admin/ui";
-import { listOrders, setOrderStatus } from "@/lib/orders.functions";
+import { listOrders, setOrderStatus } from "@/lib/api/admin";
+import { errorText } from "@/lib/api/errors";
 
 export const Route = createFileRoute("/admin/orders")({
-  loader: () => listOrders(),
+  loader: () => listOrders({ perPage: 200 }),
   component: AdminOrders,
 });
 
 const PAYMENT_LABEL = { cash: "Cash at pickup", card: "Card at pickup" } as const;
 
 function AdminOrders() {
-  const orders = Route.useLoaderData();
+  const { data: orders, meta } = Route.useLoaderData();
   const router = useRouter();
-  const setStatusFn = useServerFn(setOrderStatus);
   const [busyId, setBusyId] = useState<string | null>(null);
 
   const changeStatus = async (id: string, status: OrderStatus) => {
     if (status === "Cancelled" && !window.confirm(`Cancel order ${id}? Its parts go back into stock.`)) return;
     setBusyId(id);
     try {
-      await setStatusFn({ data: { id, status } });
+      await setOrderStatus(id, status);
       // Cancelling changes stock, so reload Products too.
       await router.invalidate();
       toast.success(`Order ${id}: ${status}`);
     } catch (error) {
-      toast.error("Could not update the order", {
-        description: error instanceof Error ? error.message : "Please try again.",
-      });
+      toast.error("Could not update the order", { description: errorText(error) });
     } finally {
       setBusyId(null);
     }
@@ -39,7 +36,12 @@ function AdminOrders() {
 
   return (
     <div>
-      <PageHeader title="Orders" subtitle="Orders placed on the website. Customers pick up and pay at the shop." />
+      <PageHeader
+        title="Orders"
+        subtitle={`Orders placed on the website. Customers pick up and pay at the shop.${
+          meta.total > orders.length ? ` Showing the newest ${orders.length} of ${meta.total}.` : ""
+        }`}
+      />
       <Panel>
         {orders.length === 0 ? (
           <p className="p-6 text-sm text-muted-foreground">No orders yet.</p>

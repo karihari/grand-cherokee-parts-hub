@@ -4,10 +4,10 @@ import { formatAMD } from "@/data/catalog";
 import { ADMIN_CUSTOMERS, ADMIN_SELLERS, SALES_SERIES } from "@/data/admin";
 import { PageHeader, Panel, Pill, Table, statusTone } from "@/components/admin/ui";
 import { useProducts } from "@/lib/products";
-import { listOrders } from "@/lib/orders.functions";
+import { listOrders } from "@/lib/api/admin";
 
 export const Route = createFileRoute("/admin/")({
-  loader: () => listOrders(),
+  loader: async () => (await listOrders({ perPage: 200 })).data,
   component: AdminDashboard,
 });
 

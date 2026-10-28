@@ -1,7 +1,9 @@
 import { useState } from "react";
 import { Plus, Trash2 } from "lucide-react";
 import { CATEGORIES, GENERATIONS, PRODUCT_IMAGES, type Product } from "@/data/catalog";
-import { uploadProductImage, type ProductInput } from "@/lib/admin-products.functions";
+import { uploadProductImage, type ProductInput } from "@/lib/api/admin";
+import { apiImageUrl, storedImagePath } from "@/lib/api/client";
+import { errorText } from "@/lib/api/errors";
 import { Panel } from "@/components/admin/ui";
 
 type FitRow = { gen: "WK" | "WK2" | "WL"; from: string; to: string; engines: string };
@@ -66,7 +68,7 @@ function initialState(product: Product | null): FormState {
   };
 }
 
-function toInput(f: FormState, id: string | undefined): ProductInput {
+function toInput(f: FormState): ProductInput {
   const input: ProductInput = {
     name: f.name,
     category: f.category,
@@ -75,7 +77,7 @@ function toInput(f: FormState, id: string | undefined): ProductInput {
     price: Number(f.price),
     oldPrice: f.oldPrice.trim() ? Number(f.oldPrice) : null,
     stock: Number(f.stock),
-    image: f.imageKey === CUSTOM_IMAGE ? f.imageUrl : f.imageKey,
+    image: f.imageKey === CUSTOM_IMAGE ? storedImagePath(f.imageUrl) : f.imageKey,
     description: f.description,
     featured: f.featured,
     fits: f.fits.map((r) => {
@@ -87,7 +89,6 @@ function toInput(f: FormState, id: string | undefined): ProductInput {
       return engines.length ? { ...fit, engines } : fit;
     }),
   };
-  if (id) input.id = id;
   return input;
 }
 
@@ -114,10 +115,10 @@ export function ProductForm({
     setUploading(true);
     setUploadError(null);
     try {
-      const { url } = await uploadProductImage({ data: { dataUrl: await resizeImage(file) } });
-      set({ imageUrl: url });
+      const { url } = await uploadProductImage(await resizeImage(file));
+      set({ imageUrl: apiImageUrl(url) });
     } catch (err) {
-      setUploadError(err instanceof Error ? err.message : "Upload failed");
+      setUploadError(errorText(err));
     } finally {
       setUploading(false);
     }
@@ -134,7 +135,7 @@ export function ProductForm({
             setUploadError("Choose a photo first");
             return;
           }
-          onSave(toInput(f, product?.id));
+          onSave(toInput(f));
         }}
       >
         <h2 className="text-lg font-bold">{product ? `Edit: ${product.name}` : "New product"}</h2>
@@ -312,7 +313,7 @@ const MAX_IMAGE_SIDE = 1200;
 
 // Shrinks the photo to at most 1200px on the long side and re-encodes it as JPEG,
 // so phone photos of several MB become ~200 KB before upload.
-async function resizeImage(file: File): Promise<string> {
+async function resizeImage(file: File): Promise<Blob> {
   const bitmap = await createImageBitmap(file);
   const scale = Math.min(1, MAX_IMAGE_SIDE / Math.max(bitmap.width, bitmap.height));
   const canvas = document.createElement("canvas");
@@ -323,7 +324,9 @@ async function resizeImage(file: File): Promise<string> {
   ctx.fillRect(0, 0, canvas.width, canvas.height);
   ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
   bitmap.close();
-  return canvas.toDataURL("image/jpeg", 0.85);
+  return new Promise((resolve, reject) =>
+    canvas.toBlob((blob) => (blob ? resolve(blob) : reject(new Error("Could not read the photo"))), "image/jpeg", 0.85),
+  );
 }
 
 function Field({

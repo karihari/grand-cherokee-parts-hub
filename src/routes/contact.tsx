@@ -1,10 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
 import { MessageCircle, Phone, Send } from "lucide-react";
 import { toast } from "sonner";
 import { PHONE_DISPLAY, telegramLink, whatsappLink } from "@/lib/contact";
-import { sendEnquiry } from "@/lib/enquiry.functions";
+import { sendEnquiry } from "@/lib/api/shop";
+import { errorText } from "@/lib/api/errors";
 import { useStore, vehicleLabel } from "@/lib/store";
 
 
@@ -30,7 +30,6 @@ function ContactPage() {
   const [sending, setSending] = useState(false);
   const [ready, setReady] = useState(false);
   useEffect(() => setReady(true), []);
-  const submitEnquiry = useServerFn(sendEnquiry);
 
   const message = `Hello, I have a question about Grand Cherokee parts.\nVehicle: ${
     activeVehicle ? vehicleLabel(activeVehicle) : "not selected yet"
@@ -84,27 +83,36 @@ function ContactPage() {
           const form = e.currentTarget;
           const fd = new FormData(form);
           setSending(true);
-          const result = await submitEnquiry({
-            data: {
+          try {
+            await sendEnquiry({
               name: String(fd.get("name") ?? ""),
               phone: String(fd.get("phone") ?? ""),
               email: String(fd.get("email") ?? ""),
               part: String(fd.get("part") ?? ""),
               message: String(fd.get("msg") ?? ""),
               vehicle: activeVehicle ? vehicleLabel(activeVehicle) : "",
-            },
-          }).catch(() => ({ ok: false as const }));
-          setSending(false);
-          if (result.ok) {
+              website: String(fd.get("website") ?? ""),
+            });
             setSent(true);
             form.reset();
             toast.success("Message sent", { description: "We reply within one business hour." });
-          } else {
-            toast.error("Could not send", { description: "Please try WhatsApp or Telegram." });
+          } catch (error) {
+            toast.error("Could not send", { description: errorText(error) });
+          } finally {
+            setSending(false);
           }
         }}
       >
         <h2 className="text-lg font-bold">Send an enquiry</h2>
+        {/* Spam trap: hidden from people, filled in by bots. */}
+        <input
+          type="text"
+          name="website"
+          tabIndex={-1}
+          autoComplete="off"
+          aria-hidden="true"
+          className="absolute -left-[9999px] h-0 w-0 opacity-0"
+        />
         <div className="grid gap-4 sm:grid-cols-2">
           <Field id="name" label="Your name" required />
           <Field id="phone" label="Phone" type="tel" required />
