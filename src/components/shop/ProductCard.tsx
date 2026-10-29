@@ -154,6 +154,13 @@ export function ProductCard({ product }: { product: Product }) {
             </button>
             <ContactButtons product={product} />
           </div>
+          <Link
+            to="/checkout"
+            onClick={() => addToCart(product.id)}
+            className="inline-flex h-10 w-full items-center justify-center rounded-md bg-accent px-3 text-sm font-semibold text-accent-foreground transition hover:brightness-95"
+          >
+            {t("Купить сейчас", "Buy now")}
+          </Link>
         </div>
       </div>
     </article>
