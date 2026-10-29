@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Minus, Plus, Trash2 } from "lucide-react";
-import { formatAMD, productName } from "@/data/catalog";
+import { formatAMD, hasPrice, priceLabel, productName } from "@/data/catalog";
 import { useStore } from "@/lib/store";
 import { ContactButtons } from "@/components/shop/ContactButtons";
 import { findProduct, useProducts } from "@/lib/products";
@@ -42,6 +42,7 @@ function CartPage() {
     const product = findProduct(products, l.productId);
     return product ? [{ line: l, product }] : [];
   });
+  const canOrder = lines.every(({ product }) => hasPrice(product));
 
   if (lines.length === 0) {
     return (
@@ -129,7 +130,7 @@ function CartPage() {
                 </div>
               </div>
               <p className="font-display text-xl font-bold">
-                {formatAMD(product.price * line.qty)}
+                {priceLabel(product.price * line.qty, t)}
               </p>
             </li>
           ))}
@@ -146,12 +147,30 @@ function CartPage() {
               "Pick up and pay at our shop. No delivery.",
             )}
           </p>
-          <Link
-            to="/checkout"
-            className="mt-5 inline-flex h-12 w-full items-center justify-center rounded-md bg-accent text-sm font-semibold text-accent-foreground"
-          >
-            {t("Оформить заказ", "Proceed to Checkout")}
-          </Link>
+          {canOrder ? (
+            <Link
+              to="/checkout"
+              className="mt-5 inline-flex h-12 w-full items-center justify-center rounded-md bg-accent text-sm font-semibold text-accent-foreground"
+            >
+              {t("Оформить заказ", "Proceed to Checkout")}
+            </Link>
+          ) : (
+            <>
+              <p className="mt-4 rounded-md bg-muted p-3 text-sm">
+                {t(
+                  "У некоторых запчастей в корзине ещё нет цены. Напишите нам, чтобы узнать цену, или удалите их, чтобы оформить заказ.",
+                  "Some parts in your cart do not have a price yet. Message us for the price, or remove them to place your order.",
+                )}
+              </p>
+              <button
+                type="button"
+                disabled
+                className="mt-3 inline-flex h-12 w-full items-center justify-center rounded-md bg-accent text-sm font-semibold text-accent-foreground opacity-60"
+              >
+                {t("Оформить заказ", "Proceed to Checkout")}
+              </button>
+            </>
+          )}
         </aside>
       </div>
     </div>

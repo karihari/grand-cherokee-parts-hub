@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
-import { formatAMD, productName } from "@/data/catalog";
+import { formatAMD, priceLabel, productName } from "@/data/catalog";
 import { useStore } from "@/lib/store";
 import { MyGarage } from "@/components/shop/MyGarage";
 import { cn } from "@/lib/utils";
@@ -286,7 +286,7 @@ function ProductList({ title, ids }: { title: string; ids: string[] }) {
                 {t("Артикул", "Part №")} {p.partNumber}
               </p>
             </div>
-            <span className="font-semibold">{formatAMD(p.price)}</span>
+            <span className="font-semibold">{priceLabel(p.price, t)}</span>
           </li>
         ))}
       </ul>

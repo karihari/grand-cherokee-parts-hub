@@ -84,6 +84,15 @@ export const placeOrder = createServerFn({ method: "POST" })
             "A part in your cart is no longer for sale. Please remove it.",
           ),
         };
+      // A price of 0 means the shop has not set one yet.
+      if (row.price <= 0)
+        return {
+          ok: false as const,
+          error: serverT()(
+            `У запчасти «${row.name}» ещё нет цены. Напишите нам или удалите её из корзины.`,
+            `"${row.nameEn || row.name}" does not have a price yet. Message us or remove it from your cart.`,
+          ),
+        };
       items.push({ productId, name: row.name, price: row.price, qty });
     }
 

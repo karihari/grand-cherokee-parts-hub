@@ -6,6 +6,8 @@ import {
   categoryName,
   fitmentLabel,
   formatAMD,
+  hasPrice,
+  priceLabel,
   productDescription,
   productName,
 } from "@/data/catalog";
@@ -175,7 +177,7 @@ function ProductPage() {
             <div className="flex items-end justify-between gap-3">
               <div>
                 <p className="font-display text-4xl font-bold leading-none">
-                  {formatAMD(product.price)}
+                  {priceLabel(product.price, t)}
                 </p>
                 {product.oldPrice ? (
                   <p className="mt-1 text-sm text-muted-foreground line-through">
@@ -209,13 +211,15 @@ function ProductPage() {
                 <ShoppingCart className="size-4" aria-hidden="true" />{" "}
                 {t("В корзину", "Add to cart")}
               </button>
-              <Link
-                to="/checkout"
-                onClick={() => addToCart(product.id)}
-                className="inline-flex h-12 items-center justify-center rounded-md bg-accent text-sm font-semibold text-accent-foreground hover:brightness-95"
-              >
-                {t("Купить сейчас", "Buy now")}
-              </Link>
+              {hasPrice(product) ? (
+                <Link
+                  to="/checkout"
+                  onClick={() => addToCart(product.id)}
+                  className="inline-flex h-12 items-center justify-center rounded-md bg-accent text-sm font-semibold text-accent-foreground hover:brightness-95"
+                >
+                  {t("Купить сейчас", "Buy now")}
+                </Link>
+              ) : null}
             </div>
 
             <p className="mt-4 text-sm font-semibold">
@@ -276,7 +280,7 @@ function ProductPage() {
           <div className="min-w-0 flex-1">
             <p className="truncate text-xs text-muted-foreground">{productName(product, lang)}</p>
             <p className="font-display text-lg font-bold leading-none">
-              {formatAMD(product.price)}
+              {priceLabel(product.price, t)}
             </p>
           </div>
           <button

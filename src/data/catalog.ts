@@ -247,6 +247,15 @@ export function formatAMD(value: number) {
   return `֏${value.toLocaleString("ru-RU")}`;
 }
 
+// A price of 0 means the shop has not set one yet: the part can go in the cart but cannot be ordered.
+export function hasPrice(p: { price: number }) {
+  return p.price > 0;
+}
+
+export function priceLabel(price: number, t: T) {
+  return price > 0 ? formatAMD(price) : t("Цена по запросу", "Price on request");
+}
+
 export function fitmentLabel(f: Fitment) {
   const range = f.from === f.to ? `${f.from}` : `${f.from}–${f.to}`;
   return `Grand Cherokee ${f.gen} ${range}${f.engines ? ` · ${f.engines.join(", ")}` : ""}`;

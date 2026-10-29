@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { fitmentLabel, formatAMD, productName } from "@/data/catalog";
+import { fitmentLabel, priceLabel, productName } from "@/data/catalog";
 import { useStore } from "@/lib/store";
 import { useProducts } from "@/lib/products";
 import { tr, useT, useLang } from "@/lib/i18n";
@@ -74,7 +74,7 @@ function ComparePage() {
   const rows: [string, (p: (typeof items)[number]) => React.ReactNode][] = [
     [
       t("Цена", "Price"),
-      (p) => <span className="font-display text-lg font-bold">{formatAMD(p.price)}</span>,
+      (p) => <span className="font-display text-lg font-bold">{priceLabel(p.price, t)}</span>,
     ],
     [t("Бренд", "Brand"), (p) => p.brand],
     [t("Артикул", "Part number"), (p) => p.partNumber],

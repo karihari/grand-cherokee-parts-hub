@@ -1,4 +1,4 @@
-import { formatAMD, productName, type Product } from "@/data/catalog";
+import { priceLabel, productName, type Product } from "@/data/catalog";
 import { vehicleLabel, type Vehicle } from "@/lib/store";
 import { tr, type Lang } from "@/lib/i18n";
 
@@ -22,7 +22,7 @@ export function productEnquiry(
     `${t("Товар", "Product")}: ${productName(product, lang)}`,
     `${t("ID товара", "Product ID")}: ${product.id}`,
     `${t("Артикул", "Part Number")}: ${product.partNumber}`,
-    `${t("Цена", "Price")}: ${formatAMD(product.price)}`,
+    `${t("Цена", "Price")}: ${priceLabel(product.price, t)}`,
     `${t("Автомобиль", "Vehicle")}: ${vehicle ? vehicleLabel(vehicle) : t("ещё не выбран", "not selected yet")}`,
   ];
   if (url) lines.push(`${t("Ссылка", "Link")}: ${url}`);

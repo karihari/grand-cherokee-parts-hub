@@ -1,7 +1,14 @@
 import { Link } from "@tanstack/react-router";
 import { Heart, GitCompareArrows, ShoppingCart, Star } from "lucide-react";
 import { toast } from "sonner";
-import { fitmentLabel, formatAMD, type Product, productName } from "@/data/catalog";
+import {
+  fitmentLabel,
+  formatAMD,
+  hasPrice,
+  priceLabel,
+  type Product,
+  productName,
+} from "@/data/catalog";
 import { useStore } from "@/lib/store";
 import { ContactButtons } from "@/components/shop/ContactButtons";
 import { useT, useLang } from "@/lib/i18n";
@@ -112,7 +119,7 @@ export function ProductCard({ product }: { product: Product }) {
           <div className="flex items-end justify-between gap-2">
             <div>
               <p className="font-display text-2xl font-bold leading-none">
-                {formatAMD(product.price)}
+                {priceLabel(product.price, t)}
               </p>
               {product.oldPrice ? (
                 <p className="mt-1 text-xs text-muted-foreground line-through">
@@ -154,13 +161,15 @@ export function ProductCard({ product }: { product: Product }) {
             </button>
             <ContactButtons product={product} />
           </div>
-          <Link
-            to="/checkout"
-            onClick={() => addToCart(product.id)}
-            className="inline-flex h-10 w-full items-center justify-center rounded-md bg-accent px-3 text-sm font-semibold text-accent-foreground transition hover:brightness-95"
-          >
-            {t("Купить сейчас", "Buy now")}
-          </Link>
+          {hasPrice(product) ? (
+            <Link
+              to="/checkout"
+              onClick={() => addToCart(product.id)}
+              className="inline-flex h-10 w-full items-center justify-center rounded-md bg-accent px-3 text-sm font-semibold text-accent-foreground transition hover:brightness-95"
+            >
+              {t("Купить сейчас", "Buy now")}
+            </Link>
+          ) : null}
         </div>
       </div>
     </article>

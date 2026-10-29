@@ -3,7 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { Check, CheckCircle2, Store } from "lucide-react";
 import { toast } from "sonner";
-import { formatAMD, productName } from "@/data/catalog";
+import { formatAMD, hasPrice, priceLabel, productName } from "@/data/catalog";
 import { useStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
 import { findProduct, useProducts } from "@/lib/products";
@@ -179,6 +179,28 @@ function CheckoutPage() {
     );
   }
 
+  if (!lines.every(({ product }) => hasPrice(product))) {
+    return (
+      <div className="mx-auto max-w-xl px-4 py-20 text-center">
+        <h1 className="text-2xl font-bold">
+          {t("Заказ пока нельзя оформить", "This order cannot be placed yet")}
+        </h1>
+        <p className="mt-2 text-sm text-muted-foreground">
+          {t(
+            "У некоторых запчастей в корзине ещё нет цены. Напишите нам, чтобы узнать цену, или удалите их, чтобы оформить заказ.",
+            "Some parts in your cart do not have a price yet. Message us for the price, or remove them to place your order.",
+          )}
+        </p>
+        <Link
+          to="/cart"
+          className="mt-6 inline-flex h-11 items-center rounded-md bg-primary px-5 text-sm font-semibold text-primary-foreground"
+        >
+          {t("Вернуться в корзину", "Back to cart")}
+        </Link>
+      </div>
+    );
+  }
+
   return (
     <div className="mx-auto max-w-5xl px-4 py-8">
       <h1 className="text-3xl font-bold">{t("Оформление заказа", "Checkout")}</h1>
@@ -303,7 +325,7 @@ function CheckoutPage() {
                     <span>
                       {productName(product, lang)} × {qty}
                     </span>
-                    <span className="font-medium">{formatAMD(product.price * qty)}</span>
+                    <span className="font-medium">{priceLabel(product.price * qty, t)}</span>
                   </li>
                 ))}
               </ul>
