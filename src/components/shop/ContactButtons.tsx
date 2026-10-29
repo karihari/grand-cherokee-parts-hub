@@ -1,7 +1,8 @@
 import { MessageCircle, Send } from "lucide-react";
-import type { Product } from "@/data/catalog";
+import { productName, type Product } from "@/data/catalog";
 import { useStore } from "@/lib/store";
 import { productEnquiry, productUrl, telegramLink, whatsappLink } from "@/lib/contact";
+import { useLang, useT } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 
 export function ContactButtons({
@@ -13,8 +14,10 @@ export function ContactButtons({
   variant?: "icon" | "full";
   className?: string;
 }) {
+  const t = useT();
+  const lang = useLang();
   const { activeVehicle } = useStore();
-  const message = () => productEnquiry(product, activeVehicle, productUrl(product.slug));
+  const message = () => productEnquiry(lang, product, activeVehicle, productUrl(product.slug));
 
   if (variant === "icon") {
     return (
@@ -23,7 +26,10 @@ export function ContactButtons({
           href={whatsappLink(message())}
           target="_blank"
           rel="noopener noreferrer"
-          aria-label={`Ask about ${product.name} on WhatsApp`}
+          aria-label={t(
+            `Спросить о «${productName(product, lang)}» в WhatsApp`,
+            `Ask about ${productName(product, lang)} on WhatsApp`,
+          )}
           className="inline-flex size-9 items-center justify-center rounded-md border border-border text-whatsapp transition-colors hover:bg-whatsapp/10"
         >
           <MessageCircle className="size-4" aria-hidden="true" />
@@ -32,7 +38,10 @@ export function ContactButtons({
           href={telegramLink()}
           target="_blank"
           rel="noopener noreferrer"
-          aria-label={`Ask about ${product.name} on Telegram`}
+          aria-label={t(
+            `Спросить о «${productName(product, lang)}» в Telegram`,
+            `Ask about ${productName(product, lang)} on Telegram`,
+          )}
           className="inline-flex size-9 items-center justify-center rounded-md border border-border text-telegram transition-colors hover:bg-telegram/10"
         >
           <Send className="size-4" aria-hidden="true" />

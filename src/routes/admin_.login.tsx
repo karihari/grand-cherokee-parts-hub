@@ -3,6 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { Lock } from "lucide-react";
 import { adminLogin, getAdminSession } from "@/lib/auth.functions";
+import { tr, useT } from "@/lib/i18n";
 
 type Search = { redirect?: string | undefined };
 
@@ -20,13 +21,20 @@ export const Route = createFileRoute("/admin_/login")({
     if (session.isAdmin) throw redirect({ href: safeRedirect(search.redirect) });
     return { configured: session.configured };
   },
-  head: () => ({
-    meta: [{ title: "Admin sign in | GC Parts" }, { name: "robots", content: "noindex" }],
-  }),
+  head: ({ match }) => {
+    const t = tr(match.context.lang);
+    return {
+      meta: [
+        { title: t("Вход в админку | GC Parts", "Admin sign in | GC Parts") },
+        { name: "robots", content: "noindex" },
+      ],
+    };
+  },
   component: AdminLoginPage,
 });
 
 function AdminLoginPage() {
+  const t = useT();
   const { configured } = Route.useRouteContext();
   const search = Route.useSearch();
   const router = useRouter();
@@ -51,7 +59,9 @@ function AdminLoginPage() {
               setError(res.error);
             }
           } catch {
-            setError("Could not sign in. Please try again.");
+            setError(
+              t("Не удалось войти. Попробуйте ещё раз.", "Could not sign in. Please try again."),
+            );
           } finally {
             setBusy(false);
           }
@@ -59,16 +69,18 @@ function AdminLoginPage() {
       >
         <div className="flex items-center gap-2">
           <Lock className="size-5 text-primary" aria-hidden="true" />
-          <h1 className="text-xl font-bold">Admin sign in</h1>
+          <h1 className="text-xl font-bold">{t("Вход в админку", "Admin sign in")}</h1>
         </div>
         {!configured ? (
           <p className="mt-3 rounded-md bg-warning/20 p-3 text-sm">
-            Admin login is not set up yet: ADMIN_PASSWORD and SESSION_SECRET are missing on the
-            server.
+            {t(
+              "Вход в админку не настроен: на сервере не заданы ADMIN_PASSWORD и SESSION_SECRET.",
+              "Admin login is not set up yet: ADMIN_PASSWORD and SESSION_SECRET are missing on the server.",
+            )}
           </p>
         ) : null}
         <label htmlFor="admin-password" className="mt-5 mb-1 block text-sm font-medium">
-          Password
+          {t("Пароль", "Password")}
         </label>
         <input
           id="admin-password"
@@ -90,13 +102,13 @@ function AdminLoginPage() {
           disabled={busy || !configured}
           className="mt-5 h-11 w-full rounded-md bg-primary text-sm font-semibold text-primary-foreground disabled:opacity-60"
         >
-          {busy ? "Signing in…" : "Sign in"}
+          {busy ? t("Вход…", "Signing in…") : t("Войти", "Sign in")}
         </button>
         <Link
           to="/"
           className="mt-4 block text-center text-xs text-muted-foreground hover:text-primary"
         >
-          ← Back to storefront
+          {t("← Вернуться в магазин", "← Back to storefront")}
         </Link>
       </form>
     </div>

@@ -5,6 +5,7 @@ import { CATEGORIES, type Fitment } from "@/data/catalog";
 import { requireAdmin } from "@/server/auth.server";
 import { getDb } from "@/server/db.server";
 import { productImages, products } from "@/server/schema";
+import { getLang, tr } from "@/lib/i18n";
 
 const fitmentSchema = z
   .object({
@@ -13,12 +14,21 @@ const fitmentSchema = z
     to: z.number().int().min(2005).max(2030),
     engines: z.array(z.string().min(1).max(60)).max(10).optional(),
   })
-  .refine((f) => f.from <= f.to, { message: "Year from must be before year to" });
+  .refine(
+    (f) => f.from <= f.to,
+    () => ({
+      message: tr(getLang())(
+        "Год «с» должен быть не позже года «по»",
+        "Year from must be before year to",
+      ),
+    }),
+  );
 
 export const productInputSchema = z
   .object({
     id: z.string().max(40).optional(),
     name: z.string().trim().min(2).max(160),
+    nameEn: z.string().trim().max(160),
     category: z.enum(CATEGORIES.map((c) => c.slug) as [string, ...string[]]),
     brand: z.string().trim().min(1).max(80),
     partNumber: z.string().trim().min(1).max(80),
@@ -27,13 +37,20 @@ export const productInputSchema = z
     stock: z.number().int().min(0).max(100_000),
     image: z.string().trim().min(1).max(500),
     description: z.string().trim().max(4000),
+    descriptionEn: z.string().trim().max(4000),
     fits: z.array(fitmentSchema).max(20),
     featured: z.boolean(),
   })
-  .refine((p) => p.oldPrice == null || p.oldPrice > p.price, {
-    message: "Old Price must be higher than Price",
-    path: ["oldPrice"],
-  });
+  .refine(
+    (p) => p.oldPrice == null || p.oldPrice > p.price,
+    () => ({
+      message: tr(getLang())(
+        "Старая цена должна быть выше цены",
+        "Old Price must be higher than Price",
+      ),
+      path: ["oldPrice"],
+    }),
+  );
 
 export type ProductInput = z.infer<typeof productInputSchema>;
 
@@ -95,7 +112,10 @@ export const saveProduct = createServerFn({ method: "POST" })
         .set(values)
         .where(eq(products.id, data.id))
         .returning({ id: products.id, slug: products.slug });
-      if (!row) throw new Error("This Product no longer exists.");
+      if (!row)
+        throw new Error(
+          tr(getLang())("Этот товар больше не существует.", "This Product no longer exists."),
+        );
       return row;
     }
     const [row] = await db

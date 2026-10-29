@@ -3,32 +3,57 @@ import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { Check, CheckCircle2, Store } from "lucide-react";
 import { toast } from "sonner";
-import { formatAMD } from "@/data/catalog";
+import { formatAMD, productName } from "@/data/catalog";
 import { useStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
 import { findProduct, useProducts } from "@/lib/products";
 import { placeOrder } from "@/lib/orders.functions";
-import { cleanLocalNumber, dialCode, PhoneInput, type PhoneCountry } from "@/components/shop/PhoneInput";
+import {
+  cleanLocalNumber,
+  dialCode,
+  PhoneInput,
+  type PhoneCountry,
+} from "@/components/shop/PhoneInput";
+import { tr, useT, useLang } from "@/lib/i18n";
 
 export const Route = createFileRoute("/checkout")({
-  head: () => ({
-    meta: [
-      { title: "Checkout | GC Parts" },
-      { name: "description", content: "Three short steps: details, payment, review." },
-      { property: "og:title", content: "Checkout | GC Parts" },
-      { property: "og:description", content: "Fast checkout for Grand Cherokee parts." },
-    ],
-  }),
+  head: ({ match }) => {
+    const t = tr(match.context.lang);
+    return {
+      meta: [
+        { title: t("Оформление заказа | GC Parts", "Checkout | GC Parts") },
+        {
+          name: "description",
+          content: t(
+            "Три коротких шага: данные, оплата, проверка.",
+            "Three short steps: details, payment, review.",
+          ),
+        },
+        { property: "og:title", content: t("Оформление заказа | GC Parts", "Checkout | GC Parts") },
+        {
+          property: "og:description",
+          content: t(
+            "Быстрое оформление заказа запчастей Grand Cherokee.",
+            "Fast checkout for Grand Cherokee parts.",
+          ),
+        },
+      ],
+    };
+  },
   component: CheckoutPage,
 });
 
-const STEPS = ["Your details", "Payment", "Review"];
+const STEPS = [
+  { ru: "Ваши данные", en: "Your details" },
+  { ru: "Оплата", en: "Payment" },
+  { ru: "Проверка", en: "Review" },
+];
 const LAST_STEP = STEPS.length - 1;
 
 // There is no delivery: orders are picked up and paid for at the shop.
 const PAYMENT_OPTIONS = [
-  ["cash", "Cash at pickup"],
-  ["card", "Card at pickup"],
+  ["cash", { ru: "Наличными при получении", en: "Cash at pickup" }],
+  ["card", { ru: "Картой при получении", en: "Card at pickup" }],
 ] as const;
 
 type Form = {
@@ -40,6 +65,8 @@ type Form = {
 };
 
 function CheckoutPage() {
+  const t = useT();
+  const lang = useLang();
   const products = useProducts();
   const { cart, cartSubtotal, clearCart, addOrder } = useStore();
   const router = useRouter();
@@ -63,7 +90,7 @@ function CheckoutPage() {
   const set = (patch: Partial<Form>) => setForm((f) => ({ ...f, ...patch }));
   const localPhone = cleanLocalNumber(form.phone);
   const fullPhone = `${dialCode(form.phoneCountry)} ${localPhone}`;
-  const paymentLabel = PAYMENT_OPTIONS.find(([value]) => value === form.payment)![1];
+  const paymentLabel = t(PAYMENT_OPTIONS.find(([value]) => value === form.payment)![1]);
 
   const submit = async () => {
     setSubmitting(true);
@@ -78,7 +105,9 @@ function CheckoutPage() {
         },
       });
       if (!result.ok) {
-        toast.error("Could not place the order", { description: result.error });
+        toast.error(t("Не удалось оформить заказ", "Could not place the order"), {
+          description: result.error,
+        });
         return;
       }
       addOrder({
@@ -94,8 +123,11 @@ function CheckoutPage() {
       void router.invalidate();
     } catch (error) {
       console.error(error);
-      toast.error("Could not place the order", {
-        description: "Please try again, or message us on WhatsApp.",
+      toast.error(t("Не удалось оформить заказ", "Could not place the order"), {
+        description: t(
+          "Попробуйте ещё раз или напишите нам в WhatsApp.",
+          "Please try again, or message us on WhatsApp.",
+        ),
       });
     } finally {
       setSubmitting(false);
@@ -106,17 +138,27 @@ function CheckoutPage() {
     return (
       <div className="mx-auto max-w-xl px-4 py-20 text-center">
         <CheckCircle2 className="mx-auto size-14 text-success" aria-hidden="true" />
-        <h1 className="mt-4 text-3xl font-bold">Order confirmed</h1>
+        <h1 className="mt-4 text-3xl font-bold">{t("Заказ подтверждён", "Order confirmed")}</h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          Order <span className="font-semibold text-foreground">{placed}</span> is confirmed. We will call or
-          message you when it is ready to pick up. You pay when you collect it.
+          {t("Заказ", "Order")} <span className="font-semibold text-foreground">{placed}</span>{" "}
+          {t(
+            "подтверждён. Мы позвоним или напишем, когда он будет готов к выдаче. Оплата при получении.",
+            "is confirmed. We will call or message you when it is ready to pick up. You pay when you collect it.",
+          )}
         </p>
         <div className="mt-6 flex justify-center gap-3">
-          <Link to="/account" search={{ tab: "orders" }} className="h-11 rounded-md bg-primary px-5 text-sm font-semibold leading-[2.75rem] text-primary-foreground">
-            View my orders
+          <Link
+            to="/account"
+            search={{ tab: "orders" }}
+            className="h-11 rounded-md bg-primary px-5 text-sm font-semibold leading-[2.75rem] text-primary-foreground"
+          >
+            {t("Мои заказы", "View my orders")}
           </Link>
-          <Link to="/parts" className="h-11 rounded-md border border-border px-5 text-sm font-semibold leading-[2.75rem]">
-            Keep shopping
+          <Link
+            to="/parts"
+            className="h-11 rounded-md border border-border px-5 text-sm font-semibold leading-[2.75rem]"
+          >
+            {t("Продолжить покупки", "Keep shopping")}
           </Link>
         </div>
       </div>
@@ -126,9 +168,12 @@ function CheckoutPage() {
   if (lines.length === 0) {
     return (
       <div className="mx-auto max-w-xl px-4 py-20 text-center">
-        <h1 className="text-2xl font-bold">Nothing to check out</h1>
-        <Link to="/parts" className="mt-6 inline-flex h-11 items-center rounded-md bg-primary px-5 text-sm font-semibold text-primary-foreground">
-          Shop all parts
+        <h1 className="text-2xl font-bold">{t("Нечего оформлять", "Nothing to check out")}</h1>
+        <Link
+          to="/parts"
+          className="mt-6 inline-flex h-11 items-center rounded-md bg-primary px-5 text-sm font-semibold text-primary-foreground"
+        >
+          {t("Все запчасти", "Shop all parts")}
         </Link>
       </div>
     );
@@ -136,21 +181,25 @@ function CheckoutPage() {
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-8">
-      <h1 className="text-3xl font-bold">Checkout</h1>
+      <h1 className="text-3xl font-bold">{t("Оформление заказа", "Checkout")}</h1>
 
       <ol className="mt-5 flex flex-wrap gap-2">
         {STEPS.map((label, i) => (
           <li
-            key={label}
+            key={label.en}
             className={cn(
               "inline-flex items-center gap-2 rounded-md border px-3 py-2 text-sm font-medium",
-              i === step ? "border-primary bg-primary/10 text-primary" : i < step ? "border-success/40 bg-success/10 text-success" : "border-border text-muted-foreground",
+              i === step
+                ? "border-primary bg-primary/10 text-primary"
+                : i < step
+                  ? "border-success/40 bg-success/10 text-success"
+                  : "border-border text-muted-foreground",
             )}
           >
             <span className="inline-flex size-5 items-center justify-center rounded-full bg-card text-xs font-bold">
               {i < step ? <Check className="size-3" aria-hidden="true" /> : i + 1}
             </span>
-            {label}
+            {t(label)}
           </li>
         ))}
       </ol>
@@ -161,7 +210,7 @@ function CheckoutPage() {
           onSubmit={(e) => {
             e.preventDefault();
             if (step === 0 && (localPhone.length < 5 || localPhone.length > 14)) {
-              setPhoneError("Enter a valid phone number.");
+              setPhoneError(t("Введите корректный номер телефона.", "Enter a valid phone number."));
               return;
             }
             if (step < LAST_STEP) {
@@ -173,11 +222,19 @@ function CheckoutPage() {
         >
           {step === 0 && (
             <>
-              <h2 className="text-lg font-bold">Customer information</h2>
-              <Field id="name" label="Full name" value={form.name} onChange={(v) => set({ name: v })} required />
+              <h2 className="text-lg font-bold">
+                {t("Контактные данные", "Customer information")}
+              </h2>
+              <Field
+                id="name"
+                label={t("Имя и фамилия", "Full name")}
+                value={form.name}
+                onChange={(v) => set({ name: v })}
+                required
+              />
               <div>
                 <label htmlFor="phone" className="mb-1 block text-sm font-medium">
-                  Phone
+                  {t("Телефон", "Phone")}
                 </label>
                 <PhoneInput
                   id="phone"
@@ -192,19 +249,32 @@ function CheckoutPage() {
                 />
                 {phoneError ? <p className="mt-1 text-sm text-destructive">{phoneError}</p> : null}
               </div>
-              <Field id="email" label="Email" type="email" value={form.email} onChange={(v) => set({ email: v })} required />
+              <Field
+                id="email"
+                label="Email"
+                type="email"
+                value={form.email}
+                onChange={(v) => set({ email: v })}
+                required
+              />
             </>
           )}
 
           {step === 1 && (
             <>
-              <h2 className="text-lg font-bold">Payment</h2>
+              <h2 className="text-lg font-bold">{t("Оплата", "Payment")}</h2>
               <p className="flex items-start gap-2 rounded-md bg-muted p-3 text-sm">
                 <Store className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
-                We do not deliver. We will contact you when your order is ready, and you pay when you pick it up.
+                {t(
+                  "Доставки нет. Мы свяжемся с вами, когда заказ будет готов, — оплата при получении.",
+                  "We do not deliver. We will contact you when your order is ready, and you pay when you pick it up.",
+                )}
               </p>
               {PAYMENT_OPTIONS.map(([value, label]) => (
-                <label key={value} className="flex items-center gap-3 rounded-md border border-border p-3 text-sm">
+                <label
+                  key={value}
+                  className="flex items-center gap-3 rounded-md border border-border p-3 text-sm"
+                >
                   <input
                     type="radio"
                     name="payment"
@@ -212,7 +282,7 @@ function CheckoutPage() {
                     onChange={() => set({ payment: value })}
                     className="size-4 accent-[var(--color-primary)]"
                   />
-                  {label}
+                  {t(label)}
                 </label>
               ))}
             </>
@@ -220,18 +290,18 @@ function CheckoutPage() {
 
           {step === 2 && (
             <>
-              <h2 className="text-lg font-bold">Review your order</h2>
+              <h2 className="text-lg font-bold">{t("Проверьте заказ", "Review your order")}</h2>
               <dl className="grid gap-2 text-sm sm:grid-cols-2">
-                <Review label="Name" value={form.name} />
-                <Review label="Phone" value={fullPhone} />
+                <Review label={t("Имя", "Name")} value={form.name} />
+                <Review label={t("Телефон", "Phone")} value={fullPhone} />
                 <Review label="Email" value={form.email} />
-                <Review label="Payment" value={paymentLabel} />
+                <Review label={t("Оплата", "Payment")} value={paymentLabel} />
               </dl>
               <ul className="mt-3 divide-y divide-border text-sm">
                 {lines.map(({ product, qty }) => (
                   <li key={product.id} className="flex justify-between py-2">
                     <span>
-                      {product.name} × {qty}
+                      {productName(product, lang)} × {qty}
                     </span>
                     <span className="font-medium">{formatAMD(product.price * qty)}</span>
                   </li>
@@ -248,7 +318,7 @@ function CheckoutPage() {
                 disabled={submitting}
                 className="h-12 rounded-md border border-border px-5 text-sm font-semibold"
               >
-                Back
+                {t("Назад", "Back")}
               </button>
             )}
             <button
@@ -256,16 +326,20 @@ function CheckoutPage() {
               disabled={submitting}
               className="h-12 flex-1 rounded-md bg-accent text-sm font-semibold text-accent-foreground disabled:opacity-60"
             >
-              {step === LAST_STEP ? (submitting ? "Placing order…" : "Place Order") : "Continue"}
+              {step === LAST_STEP
+                ? submitting
+                  ? t("Оформляем…", "Placing order…")
+                  : t("Оформить заказ", "Place Order")
+                : t("Далее", "Continue")}
             </button>
           </div>
         </form>
 
         <aside className="card-surface h-fit p-5">
-          <h2 className="text-lg font-bold">Summary</h2>
+          <h2 className="text-lg font-bold">{t("Итог", "Summary")}</h2>
           <dl className="mt-4 space-y-2 text-sm">
             <div className="flex justify-between">
-              <dt className="font-bold">Total</dt>
+              <dt className="font-bold">{t("Итого", "Total")}</dt>
               <dd className="font-display text-xl font-bold">{formatAMD(cartSubtotal)}</dd>
             </div>
           </dl>

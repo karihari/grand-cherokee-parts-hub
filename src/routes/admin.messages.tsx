@@ -1,35 +1,111 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { ADMIN_MESSAGES } from "@/data/admin";
-import { PageHeader, Panel, Pill, RowActions, Table, statusTone } from "@/components/admin/ui";
+import { createFileRoute, useRouter } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
+import { useState } from "react";
+import { toast } from "sonner";
+import { PageHeader, Panel, Pill, Table, statusLabel, statusTone } from "@/components/admin/ui";
+import { listEnquiries, setEnquiryStatus } from "@/lib/enquiry.functions";
+import { dateLocale, useLang, useT } from "@/lib/i18n";
 
-export const Route = createFileRoute("/admin/messages")({ component: AdminMessages });
+export const Route = createFileRoute("/admin/messages")({
+  loader: () => listEnquiries(),
+  component: AdminMessages,
+});
 
 function AdminMessages() {
+  const t = useT();
+  const lang = useLang();
+  const messages = Route.useLoaderData();
+  const router = useRouter();
+  const setStatusFn = useServerFn(setEnquiryStatus);
+  const [busyId, setBusyId] = useState<string | null>(null);
+
+  const toggle = async (id: string, resolved: boolean) => {
+    setBusyId(id);
+    try {
+      await setStatusFn({ data: { id, status: resolved ? "New" : "Resolved" } });
+      await router.invalidate();
+    } catch {
+      toast.error(t("Не удалось обновить сообщение", "Could not update the message"));
+    } finally {
+      setBusyId(null);
+    }
+  };
+
   return (
     <div>
-      <PageHeader title="Messages" subtitle="Every conversation shows the product the customer is asking about." />
+      <PageHeader
+        title={t("Сообщения", "Messages")}
+        subtitle={t(
+          "Заявки из формы на странице «Контакты».",
+          "Enquiries sent from the contact form.",
+        )}
+      />
       <Panel>
-        <Table head={["Customer", "Product", "Channel", "Last message", "Date", "Status", "Actions"]}>
-          {ADMIN_MESSAGES.map((m) => (
-            <tr key={`${m.customer}-${m.date}`} className="border-t border-border">
-              <td className="p-3 font-medium">{m.customer}</td>
-              <td className="p-3">{m.product}</td>
-              <td className="p-3">
-                <Pill tone={m.channel === "WhatsApp" ? "good" : m.channel === "Telegram" ? "info" : "muted"}>
-                  {m.channel}
-                </Pill>
-              </td>
-              <td className="p-3 text-muted-foreground">{m.last}</td>
-              <td className="p-3 whitespace-nowrap text-muted-foreground">{m.date}</td>
-              <td className="p-3">
-                <Pill tone={statusTone(m.status)}>{m.status}</Pill>
-              </td>
-              <td className="p-3">
-                <RowActions items={["Reply", "Resolve"]} />
-              </td>
-            </tr>
-          ))}
-        </Table>
+        {messages.length === 0 ? (
+          <p className="p-6 text-sm text-muted-foreground">
+            {t("Сообщений пока нет.", "No messages yet.")}
+          </p>
+        ) : (
+          <Table
+            head={[
+              t("Клиент", "Customer"),
+              t("Деталь", "Part"),
+              t("Сообщение", "Message"),
+              t("Дата", "Date"),
+              t("Статус", "Status"),
+              t("Действия", "Actions"),
+            ]}
+          >
+            {messages.map((m) => {
+              const resolved = m.status === "Resolved";
+              return (
+                <tr key={m.id} className="border-t border-border align-top">
+                  <td className="p-3">
+                    <p className="font-medium">{m.name}</p>
+                    <a
+                      href={`tel:${m.phone.replace(/\s/g, "")}`}
+                      className="block whitespace-nowrap text-primary hover:underline"
+                    >
+                      {m.phone}
+                    </a>
+                    <a
+                      href={`mailto:${m.email}`}
+                      className="block text-muted-foreground hover:underline"
+                    >
+                      {m.email}
+                    </a>
+                  </td>
+                  <td className="p-3">{m.part || "—"}</td>
+                  <td className="max-w-md p-3">
+                    <p className="whitespace-pre-line">{m.message || "—"}</p>
+                    {m.vehicle ? (
+                      <p className="mt-1 text-xs text-muted-foreground">{m.vehicle}</p>
+                    ) : null}
+                  </td>
+                  <td className="p-3 whitespace-nowrap text-muted-foreground">
+                    {new Date(m.createdAt).toLocaleString(dateLocale(lang), {
+                      dateStyle: "medium",
+                      timeStyle: "short",
+                    })}
+                  </td>
+                  <td className="p-3">
+                    <Pill tone={statusTone(m.status)}>{statusLabel(m.status, t)}</Pill>
+                  </td>
+                  <td className="p-3">
+                    <button
+                      type="button"
+                      disabled={busyId === m.id}
+                      onClick={() => void toggle(m.id, resolved)}
+                      className="whitespace-nowrap rounded-md border border-border px-2 py-1 text-xs font-medium hover:bg-secondary disabled:opacity-60"
+                    >
+                      {resolved ? t("Открыть снова", "Reopen") : t("Решено", "Mark resolved")}
+                    </button>
+                  </td>
+                </tr>
+              );
+            })}
+          </Table>
+        )}
       </Panel>
     </div>
   );

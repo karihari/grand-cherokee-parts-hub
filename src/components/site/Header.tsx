@@ -1,28 +1,23 @@
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
-import {
-  Car,
-  Heart,
-  Menu,
-  Search,
-  ShoppingCart,
-  User,
-  X,
-} from "lucide-react";
+import { Car, Heart, Menu, Search, ShoppingCart, User, X } from "lucide-react";
 import { useStore, vehicleLabel } from "@/lib/store";
 import { VehicleSelector } from "@/components/shop/VehicleSelector";
+import { useT } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
+import { LangSwitch } from "./LangSwitch";
 
 const NAV = [
-  { to: "/", label: "Home" },
-  { to: "/parts", label: "Parts" },
-  { to: "/categories", label: "Categories" },
-  { to: "/models", label: "Grand Cherokee Models" },
-  { to: "/deals", label: "Deals" },
-  { to: "/contact", label: "Contact" },
+  { to: "/", label: { ru: "Главная", en: "Home" } },
+  { to: "/parts", label: { ru: "Запчасти", en: "Parts" } },
+  { to: "/categories", label: { ru: "Категории", en: "Categories" } },
+  { to: "/models", label: { ru: "Модели Grand Cherokee", en: "Grand Cherokee Models" } },
+  { to: "/deals", label: { ru: "Акции", en: "Deals" } },
+  { to: "/contact", label: { ru: "Контакты", en: "Contact" } },
 ] as const;
 
 export function Header() {
+  const t = useT();
   const navigate = useNavigate();
   const { cartCount, wishlist, activeVehicle } = useStore();
   const [query, setQuery] = useState("");
@@ -41,11 +36,15 @@ export function Header() {
         <button
           type="button"
           className="inline-flex size-10 items-center justify-center rounded-md hover:bg-sidebar-accent lg:hidden"
-          aria-label={menuOpen ? "Close menu" : "Open menu"}
+          aria-label={menuOpen ? t("Закрыть меню", "Close menu") : t("Открыть меню", "Open menu")}
           aria-expanded={menuOpen}
           onClick={() => setMenuOpen((v) => !v)}
         >
-          {menuOpen ? <X className="size-5" aria-hidden="true" /> : <Menu className="size-5" aria-hidden="true" />}
+          {menuOpen ? (
+            <X className="size-5" aria-hidden="true" />
+          ) : (
+            <Menu className="size-5" aria-hidden="true" />
+          )}
         </button>
 
         <Link to="/" className="flex items-center gap-2">
@@ -59,34 +58,41 @@ export function Header() {
 
         <form onSubmit={submit} role="search" className="ml-2 hidden flex-1 md:block">
           <label htmlFor="site-search" className="sr-only">
-            Search parts
+            {t("Поиск запчастей", "Search parts")}
           </label>
           <div className="relative">
-            <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
+            <Search
+              className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
+              aria-hidden="true"
+            />
             <input
               id="site-search"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search parts, part numbers or OEM numbers"
+              placeholder={t(
+                "Поиск по названию или номеру детали",
+                "Search parts, part numbers or OEM numbers",
+              )}
               className="h-11 w-full rounded-md border border-transparent bg-card pl-9 pr-24 text-sm text-foreground placeholder:text-muted-foreground"
             />
             <button
               type="submit"
               className="absolute right-1 top-1 h-9 rounded-md bg-accent px-4 text-sm font-semibold text-accent-foreground"
             >
-              Search
+              {t("Найти", "Search")}
             </button>
           </div>
         </form>
 
         <div className="ml-auto flex items-center gap-1">
-          <IconLink to="/wishlist" label="Wishlist" count={wishlist.length}>
+          <LangSwitch className="mr-1 hidden sm:inline-flex" />
+          <IconLink to="/wishlist" label={t("Избранное", "Wishlist")} count={wishlist.length}>
             <Heart className="size-5" aria-hidden="true" />
           </IconLink>
-          <IconLink to="/cart" label="Cart" count={cartCount}>
+          <IconLink to="/cart" label={t("Корзина", "Cart")} count={cartCount}>
             <ShoppingCart className="size-5" aria-hidden="true" />
           </IconLink>
-          <IconLink to="/account" label="Account">
+          <IconLink to="/account" label={t("Аккаунт", "Account")}>
             <User className="size-5" aria-hidden="true" />
           </IconLink>
         </div>
@@ -94,7 +100,7 @@ export function Header() {
 
       <div className="border-t border-sidebar-border bg-surface">
         <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-x-6 gap-y-2 px-4 py-2">
-          <nav aria-label="Main" className="hidden items-center gap-6 lg:flex">
+          <nav aria-label={t("Главное меню", "Main")} className="hidden items-center gap-6 lg:flex">
             {NAV.map((item) => (
               <Link
                 key={item.to}
@@ -103,7 +109,7 @@ export function Header() {
                 activeProps={{ className: "text-accent" }}
                 className="text-sm font-medium text-surface-foreground/80 transition-colors hover:text-accent"
               >
-                {item.label}
+                {t(item.label)}
               </Link>
             ))}
           </nav>
@@ -118,7 +124,9 @@ export function Header() {
             aria-expanded={selectorOpen}
           >
             <Car className="size-4" aria-hidden="true" />
-            {activeVehicle ? vehicleLabel(activeVehicle) : "Select your Grand Cherokee"}
+            {activeVehicle
+              ? vehicleLabel(activeVehicle)
+              : t("Выберите ваш Grand Cherokee", "Select your Grand Cherokee")}
           </button>
         </div>
 
@@ -135,17 +143,20 @@ export function Header() {
         <div className="border-t border-sidebar-border bg-surface lg:hidden">
           <form onSubmit={submit} role="search" className="p-4 md:hidden">
             <label htmlFor="mobile-search" className="sr-only">
-              Search parts
+              {t("Поиск запчастей", "Search parts")}
             </label>
             <input
               id="mobile-search"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search parts, part numbers or OEM numbers"
+              placeholder={t(
+                "Поиск по названию или номеру детали",
+                "Search parts, part numbers or OEM numbers",
+              )}
               className="h-11 w-full rounded-md bg-card px-3 text-sm text-foreground placeholder:text-muted-foreground"
             />
           </form>
-          <nav aria-label="Mobile" className="flex flex-col pb-2">
+          <nav aria-label={t("Меню", "Mobile")} className="flex flex-col pb-2">
             {NAV.map((item) => (
               <Link
                 key={item.to}
@@ -153,10 +164,11 @@ export function Header() {
                 onClick={() => setMenuOpen(false)}
                 className="px-4 py-3 text-sm font-medium text-surface-foreground/90 hover:bg-sidebar-accent"
               >
-                {item.label}
+                {t(item.label)}
               </Link>
             ))}
           </nav>
+          <LangSwitch className="mx-4 mb-4 sm:hidden" />
         </div>
       ) : null}
     </header>

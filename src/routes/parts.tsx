@@ -7,6 +7,7 @@ import { ProductCard } from "@/components/shop/ProductCard";
 import { MyGarage } from "@/components/shop/MyGarage";
 import { cn } from "@/lib/utils";
 import { useProducts } from "@/lib/products";
+import { plural, tr, useLang, useT } from "@/lib/i18n";
 
 type Search = { q?: string | undefined; category?: string | undefined };
 
@@ -17,27 +18,48 @@ export const Route = createFileRoute("/parts")({
       typeof search["category"] === "string" && search["category"] ? search["category"] : undefined,
   }),
 
-  head: () => ({
-    meta: [
-      { title: "Grand Cherokee Parts Catalogue | GC Parts" },
-      {
-        name: "description",
-        content:
-          "Browse Jeep Grand Cherokee parts by category, price and fitment. Compatible results are shown first.",
-      },
-      { property: "og:title", content: "Grand Cherokee Parts Catalogue | GC Parts" },
-      {
-        property: "og:description",
-        content: "Filter Grand Cherokee brakes, engine, suspension, lighting and more by fitment.",
-      },
-    ],
-  }),
+  head: ({ match }) => {
+    const t = tr(match.context.lang);
+    return {
+      meta: [
+        {
+          title: t(
+            "Каталог запчастей Grand Cherokee | GC Parts",
+            "Grand Cherokee Parts Catalogue | GC Parts",
+          ),
+        },
+        {
+          name: "description",
+          content: t(
+            "Запчасти Jeep Grand Cherokee по категориям, цене и совместимости. Подходящие детали показываются первыми.",
+            "Browse Jeep Grand Cherokee parts by category, price and fitment. Compatible results are shown first.",
+          ),
+        },
+        {
+          property: "og:title",
+          content: t(
+            "Каталог запчастей Grand Cherokee | GC Parts",
+            "Grand Cherokee Parts Catalogue | GC Parts",
+          ),
+        },
+        {
+          property: "og:description",
+          content: t(
+            "Тормоза, двигатель, подвеска, освещение и другие запчасти Grand Cherokee с фильтром по совместимости.",
+            "Filter Grand Cherokee brakes, engine, suspension, lighting and more by fitment.",
+          ),
+        },
+      ],
+    };
+  },
   component: PartsPage,
 });
 
 type SortKey = "recommended" | "price-asc" | "price-desc" | "newest" | "rating";
 
 function PartsPage() {
+  const t = useT();
+  const lang = useLang();
   const products = useProducts();
   const { q, category } = Route.useSearch();
   const { activeVehicle } = useStore();
@@ -58,7 +80,15 @@ function PartsPage() {
       if (p.rating < minRating) return false;
       if (fitsOnly && checkFit(p, activeVehicle) !== "fits") return false;
       if (term) {
-        const haystack = [p.name, p.brand, p.partNumber, p.category, p.description]
+        const haystack = [
+          p.name,
+          p.nameEn,
+          p.brand,
+          p.partNumber,
+          p.category,
+          p.description,
+          p.descriptionEn,
+        ]
           .join(" ")
           .toLowerCase();
         if (!haystack.includes(term)) return false;
@@ -86,18 +116,32 @@ function PartsPage() {
     return list;
   }, [products, q, category, inStockOnly, fitsOnly, maxPrice, minRating, sort, activeVehicle]);
 
-  const title = category ? `Grand Cherokee ${categoryName(category)} Parts` : "Grand Cherokee Parts";
+  const title = category
+    ? `${categoryName(category, t)} — Grand Cherokee`
+    : t("Запчасти Grand Cherokee", "Grand Cherokee Parts");
 
   const filters = (
     <div className="space-y-6">
-      <FilterGroup title="Compatibility">
-        <Check label="Only parts that fit my Grand Cherokee" checked={fitsOnly} onChange={() => setFitsOnly((v) => !v)} />
+      <FilterGroup title={t("Совместимость", "Compatibility")}>
+        <Check
+          label={t(
+            "Только подходящие для моего Grand Cherokee",
+            "Only parts that fit my Grand Cherokee",
+          )}
+          checked={fitsOnly}
+          onChange={() => setFitsOnly((v) => !v)}
+        />
         {!activeVehicle && (
-          <p className="text-xs text-muted-foreground">Save a vehicle first to use this filter.</p>
+          <p className="text-xs text-muted-foreground">
+            {t(
+              "Сначала сохраните автомобиль, чтобы использовать этот фильтр.",
+              "Save a vehicle first to use this filter.",
+            )}
+          </p>
         )}
       </FilterGroup>
 
-      <FilterGroup title="Category">
+      <FilterGroup title={t("Категория", "Category")}>
         <div className="flex flex-wrap gap-2">
           <Link
             to="/parts"
@@ -107,7 +151,7 @@ function PartsPage() {
               !category ? "border-primary bg-primary/10 text-primary" : "border-border",
             )}
           >
-            All
+            {t("Все", "All")}
           </Link>
           {CATEGORIES.map((c) => (
             <Link
@@ -119,30 +163,34 @@ function PartsPage() {
                 category === c.slug ? "border-primary bg-primary/10 text-primary" : "border-border",
               )}
             >
-              {c.name}
+              {t(c.name)}
             </Link>
           ))}
         </div>
       </FilterGroup>
 
-      <FilterGroup title={`Price up to ֏${maxPrice.toLocaleString("en-US")}`}>
+      <FilterGroup title={`${t("Цена до", "Price up to")} ֏${maxPrice.toLocaleString("ru-RU")}`}>
         <input
           type="range"
           min={5000}
           max={500000}
           step={5000}
           value={maxPrice}
-          aria-label="Maximum price"
+          aria-label={t("Максимальная цена", "Maximum price")}
           onChange={(e) => setMaxPrice(Number(e.target.value))}
           className="w-full accent-[var(--color-primary)]"
         />
       </FilterGroup>
 
-      <FilterGroup title="Availability">
-        <Check label="In stock only" checked={inStockOnly} onChange={() => setInStockOnly((v) => !v)} />
+      <FilterGroup title={t("Наличие", "Availability")}>
+        <Check
+          label={t("Только в наличии", "In stock only")}
+          checked={inStockOnly}
+          onChange={() => setInStockOnly((v) => !v)}
+        />
       </FilterGroup>
 
-      <FilterGroup title="Rating">
+      <FilterGroup title={t("Рейтинг", "Rating")}>
         {[0, 4, 4.5].map((r) => (
           <label key={r} className="flex items-center gap-2 text-sm">
             <input
@@ -152,7 +200,7 @@ function PartsPage() {
               onChange={() => setMinRating(r)}
               className="size-4 accent-[var(--color-primary)]"
             />
-            {r === 0 ? "Any rating" : `${r}+ stars`}
+            {r === 0 ? t("Любой рейтинг", "Any rating") : `${r}+ ${t("звёзд", "stars")}`}
           </label>
         ))}
       </FilterGroup>
@@ -161,9 +209,9 @@ function PartsPage() {
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8">
-      <nav aria-label="Breadcrumb" className="text-xs text-muted-foreground">
+      <nav aria-label={t("Навигация", "Breadcrumb")} className="text-xs text-muted-foreground">
         <Link to="/" className="hover:text-primary">
-          Home
+          {t("Главная", "Home")}
         </Link>
         <span aria-hidden="true"> / </span>
         <span className="text-foreground">{title}</span>
@@ -171,7 +219,9 @@ function PartsPage() {
 
       <h1 className="mt-2 text-3xl font-bold">{title}</h1>
       <p className="mt-1 text-sm text-muted-foreground">
-        {results.length} products{q ? ` for “${q}”` : ""}
+        {results.length}{" "}
+        {plural(lang, results.length, ["товар", "товара", "товаров"], ["product", "products"])}
+        {q ? t(` по запросу «${q}»`, ` for “${q}”`) : ""}
       </p>
 
       <div className="mt-5">
@@ -180,7 +230,9 @@ function PartsPage() {
 
       <div className="mt-6 grid gap-6 lg:grid-cols-[260px_1fr]">
         <aside className="hidden lg:block">
-          <div className="card-surface sticky top-32 max-h-[calc(100vh-9rem)] overflow-auto p-4">{filters}</div>
+          <div className="card-surface sticky top-32 max-h-[calc(100vh-9rem)] overflow-auto p-4">
+            {filters}
+          </div>
         </aside>
 
         <div>
@@ -190,29 +242,34 @@ function PartsPage() {
               onClick={() => setFiltersOpen(true)}
               className="inline-flex h-11 items-center gap-2 rounded-md border border-border px-4 text-sm font-semibold lg:hidden"
             >
-              <SlidersHorizontal className="size-4" aria-hidden="true" /> Filters
+              <SlidersHorizontal className="size-4" aria-hidden="true" /> {t("Фильтры", "Filters")}
             </button>
             <label className="ml-auto flex items-center gap-2 text-sm">
-              <span className="text-muted-foreground">Sort</span>
+              <span className="text-muted-foreground">{t("Сортировка", "Sort")}</span>
               <select
                 value={sort}
                 onChange={(e) => setSort(e.target.value as SortKey)}
                 className="h-11 rounded-md border border-input bg-card px-3 text-sm"
               >
-                <option value="recommended">Recommended</option>
-                <option value="price-asc">Price: low to high</option>
-                <option value="price-desc">Price: high to low</option>
-                <option value="newest">Newest</option>
-                <option value="rating">Best rated</option>
+                <option value="recommended">{t("Рекомендуемые", "Recommended")}</option>
+                <option value="price-asc">{t("Сначала дешевле", "Price: low to high")}</option>
+                <option value="price-desc">{t("Сначала дороже", "Price: high to low")}</option>
+                <option value="newest">{t("Новинки", "Newest")}</option>
+                <option value="rating">{t("По рейтингу", "Best rated")}</option>
               </select>
             </label>
           </div>
 
           {results.length === 0 ? (
             <div className="card-surface mt-5 p-10 text-center">
-              <p className="text-lg font-semibold">No parts match these filters</p>
+              <p className="text-lg font-semibold">
+                {t("Нет запчастей по этим фильтрам", "No parts match these filters")}
+              </p>
               <p className="mt-1 text-sm text-muted-foreground">
-                Try removing a filter, or message us and we will source the part.
+                {t(
+                  "Уберите какой-нибудь фильтр или напишите нам — мы найдём нужную деталь.",
+                  "Try removing a filter, or message us and we will source the part.",
+                )}
               </p>
             </div>
           ) : (
@@ -229,17 +286,17 @@ function PartsPage() {
         <div className="fixed inset-0 z-50 flex flex-col justify-end bg-foreground/40 lg:hidden">
           <button
             type="button"
-            aria-label="Close filters"
+            aria-label={t("Закрыть фильтры", "Close filters")}
             className="flex-1"
             onClick={() => setFiltersOpen(false)}
           />
           <div className="max-h-[80vh] overflow-auto rounded-t-2xl bg-card p-5">
             <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-lg font-bold">Filters</h2>
+              <h2 className="text-lg font-bold">{t("Фильтры", "Filters")}</h2>
               <button
                 type="button"
                 onClick={() => setFiltersOpen(false)}
-                aria-label="Close filters"
+                aria-label={t("Закрыть фильтры", "Close filters")}
                 className="inline-flex size-10 items-center justify-center rounded-md border border-border"
               >
                 <X className="size-4" aria-hidden="true" />
@@ -251,7 +308,13 @@ function PartsPage() {
               onClick={() => setFiltersOpen(false)}
               className="mt-6 h-12 w-full rounded-md bg-primary text-sm font-semibold text-primary-foreground"
             >
-              Show {results.length} products
+              {t("Показать", "Show")} {results.length}{" "}
+              {plural(
+                lang,
+                results.length,
+                ["товар", "товара", "товаров"],
+                ["product", "products"],
+              )}
             </button>
           </div>
         </div>

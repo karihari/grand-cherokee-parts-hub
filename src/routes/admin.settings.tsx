@@ -4,42 +4,59 @@ import { ROLES } from "@/data/admin";
 import { PHONE_DISPLAY, TELEGRAM_USERNAME } from "@/lib/contact";
 import { PageHeader, Panel, Table } from "@/components/admin/ui";
 import { cn } from "@/lib/utils";
+import { useT } from "@/lib/i18n";
 
 export const Route = createFileRoute("/admin/settings")({ component: AdminSettings });
 
-const TABS = ["General", "WhatsApp", "Telegram", "Payment", "Shipping", "Notifications", "Users & Roles", "SEO"] as const;
+const TABS = [
+  { id: "general", label: { ru: "Общие", en: "General" } },
+  { id: "whatsapp", label: { ru: "WhatsApp", en: "WhatsApp" } },
+  { id: "telegram", label: { ru: "Telegram", en: "Telegram" } },
+  { id: "payment", label: { ru: "Оплата", en: "Payment" } },
+  { id: "shipping", label: { ru: "Доставка", en: "Shipping" } },
+  { id: "notifications", label: { ru: "Уведомления", en: "Notifications" } },
+  { id: "roles", label: { ru: "Пользователи и роли", en: "Users & Roles" } },
+  { id: "seo", label: { ru: "SEO", en: "SEO" } },
+] as const;
 
 function AdminSettings() {
-  const [tab, setTab] = useState<(typeof TABS)[number]>("General");
+  const t = useT();
+  const [tab, setTab] = useState<(typeof TABS)[number]["id"]>("general");
 
   return (
     <div>
-      <PageHeader title="Settings" subtitle="Store, channels, payments and permissions." />
+      <PageHeader
+        title={t("Настройки", "Settings")}
+        subtitle={t(
+          "Магазин, каналы связи, оплата и права доступа.",
+          "Store, channels, payments and permissions.",
+        )}
+      />
       <div className="mb-4 flex flex-wrap gap-2">
-        {TABS.map((t) => (
+        {TABS.map((item) => (
           <button
-            key={t}
+            key={item.id}
             type="button"
-            onClick={() => setTab(t)}
-            aria-current={tab === t}
+            onClick={() => setTab(item.id)}
+            aria-current={tab === item.id}
             className={cn(
               "rounded-md border px-3 py-2 text-sm font-medium",
-              tab === t ? "border-primary bg-primary/10 text-primary" : "border-border",
+              tab === item.id ? "border-primary bg-primary/10 text-primary" : "border-border",
             )}
           >
-            {t}
+            {t(item.label)}
           </button>
         ))}
       </div>
 
-      {tab === "Users & Roles" ? (
+      {tab === "roles" ? (
         <Panel>
-          <Table head={["Role", "People", "Permissions"]}>
+          <Table head={[t("Роль", "Role"), t("Сотрудники", "People"), t("Права", "Permissions")]}>
             {ROLES.map((r) => (
-              <tr key={r.role} className="border-t border-border">
-                <td className="p-3 font-medium">{r.role}</td>
+              <tr key={r.role.en} className="border-t border-border">
+                <td className="p-3 font-medium">{t(r.role)}</td>
                 <td className="p-3">{r.people}</td>
-                <td className="p-3 text-muted-foreground">{r.permissions}</td>
+                <td className="p-3 text-muted-foreground">{t(r.permissions)}</td>
               </tr>
             ))}
           </Table>
@@ -47,57 +64,99 @@ function AdminSettings() {
       ) : (
         <Panel className="p-5">
           <div className="grid gap-4 sm:grid-cols-2">
-            {tab === "General" && (
+            {tab === "general" && (
               <>
-                <Field label="Store name" value="GC Parts" />
-                <Field label="Currency" value="AMD (֏)" />
-                <Field label="Support phone" value={PHONE_DISPLAY} />
-                <Field label="Support email" value="support@gcparts.am" />
+                <Field label={t("Название магазина", "Store name")} value="GC Parts" />
+                <Field label={t("Валюта", "Currency")} value="AMD (֏)" />
+                <Field label={t("Телефон поддержки", "Support phone")} value={PHONE_DISPLAY} />
+                <Field label={t("Email поддержки", "Support email")} value="support@gcparts.am" />
               </>
             )}
-            {tab === "WhatsApp" && (
+            {tab === "whatsapp" && (
               <>
-                <Field label="WhatsApp number" value={PHONE_DISPLAY} />
+                <Field label={t("Номер WhatsApp", "WhatsApp number")} value={PHONE_DISPLAY} />
                 <Field
-                  label="Default message"
-                  value="Hello, I am interested in this Grand Cherokee part."
+                  label={t("Сообщение по умолчанию", "Default message")}
+                  value={t(
+                    "Здравствуйте, меня интересует эта запчасть для Grand Cherokee.",
+                    "Hello, I am interested in this Grand Cherokee part.",
+                  )}
                 />
               </>
             )}
-            {tab === "Telegram" && (
+            {tab === "telegram" && (
               <>
-                <Field label="Telegram username" value={`@${TELEGRAM_USERNAME}`} />
-                <Field label="Default message" value="Hello, I have a question about a Grand Cherokee part." />
+                <Field
+                  label={t("Имя пользователя Telegram", "Telegram username")}
+                  value={`@${TELEGRAM_USERNAME}`}
+                />
+                <Field
+                  label={t("Сообщение по умолчанию", "Default message")}
+                  value={t(
+                    "Здравствуйте, у меня вопрос о запчасти для Grand Cherokee.",
+                    "Hello, I have a question about a Grand Cherokee part.",
+                  )}
+                />
               </>
             )}
-            {tab === "Payment" && (
+            {tab === "payment" && (
               <>
-                <Field label="Card payments" value="Enabled" />
-                <Field label="Cash on delivery" value="Enabled" />
-                <Field label="Bank transfer" value="Enabled" />
+                <Field
+                  label={t("Оплата картой", "Card payments")}
+                  value={t("Включена", "Enabled")}
+                />
+                <Field
+                  label={t("Оплата наличными", "Cash on delivery")}
+                  value={t("Включена", "Enabled")}
+                />
+                <Field
+                  label={t("Банковский перевод", "Bank transfer")}
+                  value={t("Включён", "Enabled")}
+                />
               </>
             )}
-            {tab === "Shipping" && (
+            {tab === "shipping" && (
               <>
-                <Field label="Flat shipping rate" value="֏4,500" />
-                <Field label="Free shipping over" value="֏250,000" />
+                <Field label={t("Стоимость доставки", "Flat shipping rate")} value="֏4,500" />
+                <Field label={t("Бесплатная доставка от", "Free shipping over")} value="֏250,000" />
               </>
             )}
-            {tab === "Notifications" && (
+            {tab === "notifications" && (
               <>
-                <Field label="Order emails" value="Enabled" />
-                <Field label="Low-stock alerts" value="At 3 units" />
+                <Field
+                  label={t("Письма о заказах", "Order emails")}
+                  value={t("Включены", "Enabled")}
+                />
+                <Field
+                  label={t("Уведомления о малом остатке", "Low-stock alerts")}
+                  value={t("При 3 шт.", "At 3 units")}
+                />
               </>
             )}
-            {tab === "SEO" && (
+            {tab === "seo" && (
               <>
-                <Field label="Meta title" value="GC Parts — Jeep Grand Cherokee Spare Parts" />
-                <Field label="Meta description" value="Genuine, OEM and aftermarket Grand Cherokee parts." />
+                <Field
+                  label={t("Мета-заголовок", "Meta title")}
+                  value={t(
+                    "GC Parts — запчасти для Jeep Grand Cherokee",
+                    "GC Parts — Jeep Grand Cherokee Spare Parts",
+                  )}
+                />
+                <Field
+                  label={t("Мета-описание", "Meta description")}
+                  value={t(
+                    "Оригинальные и неоригинальные запчасти для Grand Cherokee.",
+                    "Genuine, OEM and aftermarket Grand Cherokee parts.",
+                  )}
+                />
               </>
             )}
           </div>
-          <button type="button" className="mt-5 h-11 rounded-md bg-primary px-5 text-sm font-semibold text-primary-foreground">
-            Save settings
+          <button
+            type="button"
+            className="mt-5 h-11 rounded-md bg-primary px-5 text-sm font-semibold text-primary-foreground"
+          >
+            {t("Сохранить настройки", "Save settings")}
           </button>
         </Panel>
       )}
@@ -112,7 +171,11 @@ function Field({ label, value }: { label: string; value: string }) {
       <label htmlFor={id} className="mb-1 block text-sm font-medium">
         {label}
       </label>
-      <input id={id} defaultValue={value} className="h-11 w-full rounded-md border border-input bg-card px-3 text-sm" />
+      <input
+        id={id}
+        defaultValue={value}
+        className="h-11 w-full rounded-md border border-input bg-card px-3 text-sm"
+      />
     </div>
   );
 }

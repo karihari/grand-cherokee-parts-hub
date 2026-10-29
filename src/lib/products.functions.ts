@@ -22,6 +22,8 @@ function toProduct(row: ProductRow | Product): Product {
     description: row.description,
     fits: row.fits,
   };
+  if (row.nameEn) product.nameEn = row.nameEn;
+  if (row.descriptionEn) product.descriptionEn = row.descriptionEn;
   if (row.oldPrice != null) product.oldPrice = row.oldPrice;
   if (row.featured) product.featured = true;
   return product;

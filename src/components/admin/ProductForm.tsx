@@ -3,11 +3,13 @@ import { Plus, Trash2 } from "lucide-react";
 import { CATEGORIES, GENERATIONS, PRODUCT_IMAGES, type Product } from "@/data/catalog";
 import { uploadProductImage, type ProductInput } from "@/lib/admin-products.functions";
 import { Panel } from "@/components/admin/ui";
+import { useT } from "@/lib/i18n";
 
 type FitRow = { gen: "WK" | "WK2" | "WL"; from: string; to: string; engines: string };
 
 type FormState = {
   name: string;
+  nameEn: string;
   category: string;
   brand: string;
   partNumber: string;
@@ -17,6 +19,7 @@ type FormState = {
   imageKey: string;
   imageUrl: string;
   description: string;
+  descriptionEn: string;
   featured: boolean;
   fits: FitRow[];
 };
@@ -31,6 +34,7 @@ function initialState(product: Product | null): FormState {
   if (!product) {
     return {
       name: "",
+      nameEn: "",
       category: CATEGORIES[0]?.slug ?? "",
       brand: "",
       partNumber: "",
@@ -40,6 +44,7 @@ function initialState(product: Product | null): FormState {
       imageKey: "engine",
       imageUrl: "",
       description: "",
+      descriptionEn: "",
       featured: false,
       fits: [{ gen: "WK2", from: "2011", to: "2021", engines: "" }],
     };
@@ -47,6 +52,7 @@ function initialState(product: Product | null): FormState {
   const key = imageKeyOf(product.image);
   return {
     name: product.name,
+    nameEn: product.nameEn ?? "",
     category: product.category,
     brand: product.brand,
     partNumber: product.partNumber,
@@ -56,6 +62,7 @@ function initialState(product: Product | null): FormState {
     imageKey: key ?? CUSTOM_IMAGE,
     imageUrl: key ? "" : product.image,
     description: product.description,
+    descriptionEn: product.descriptionEn ?? "",
     featured: product.featured ?? false,
     fits: product.fits.map((f) => ({
       gen: f.gen,
@@ -69,6 +76,7 @@ function initialState(product: Product | null): FormState {
 function toInput(f: FormState, id: string | undefined): ProductInput {
   const input: ProductInput = {
     name: f.name,
+    nameEn: f.nameEn,
     category: f.category,
     brand: f.brand,
     partNumber: f.partNumber,
@@ -77,6 +85,7 @@ function toInput(f: FormState, id: string | undefined): ProductInput {
     stock: Number(f.stock),
     image: f.imageKey === CUSTOM_IMAGE ? f.imageUrl : f.imageKey,
     description: f.description,
+    descriptionEn: f.descriptionEn,
     featured: f.featured,
     fits: f.fits.map((r) => {
       const engines = r.engines
@@ -102,6 +111,7 @@ export function ProductForm({
   onSave: (input: ProductInput) => void;
   onCancel: () => void;
 }) {
+  const t = useT();
   const [f, setF] = useState(() => initialState(product));
   const set = (patch: Partial<FormState>) => setF((s) => ({ ...s, ...patch }));
   const setFit = (i: number, patch: Partial<FitRow>) =>
@@ -117,7 +127,9 @@ export function ProductForm({
       const { url } = await uploadProductImage({ data: { dataUrl: await resizeImage(file) } });
       set({ imageUrl: url });
     } catch (err) {
-      setUploadError(err instanceof Error ? err.message : "Upload failed");
+      setUploadError(
+        err instanceof Error ? err.message : t("Не удалось загрузить фото", "Upload failed"),
+      );
     } finally {
       setUploading(false);
     }
@@ -131,60 +143,82 @@ export function ProductForm({
         onSubmit={(e) => {
           e.preventDefault();
           if (f.imageKey === CUSTOM_IMAGE && !f.imageUrl) {
-            setUploadError("Choose a photo first");
+            setUploadError(t("Сначала выберите фото", "Choose a photo first"));
             return;
           }
           onSave(toInput(f, product?.id));
         }}
       >
-        <h2 className="text-lg font-bold">{product ? `Edit: ${product.name}` : "New product"}</h2>
+        <h2 className="text-lg font-bold">
+          {product
+            ? `${t("Редактирование", "Edit")}: ${product.name}`
+            : t("Новый товар", "New product")}
+        </h2>
         <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          <Field label="Product name" value={f.name} onChange={(v) => set({ name: v })} required />
+          <Field
+            label={t("Название товара (русский)", "Product name (Russian)")}
+            value={f.name}
+            onChange={(v) => set({ name: v })}
+            required
+          />
+          <Field
+            label={t("Название товара (английский)", "Product name (English)")}
+            value={f.nameEn}
+            onChange={(v) => set({ nameEn: v })}
+          />
           <SelectField
-            label="Category"
+            label={t("Категория", "Category")}
             value={f.category}
             onChange={(v) => set({ category: v })}
-            options={CATEGORIES.map((c) => [c.slug, c.name])}
+            options={CATEGORIES.map((c) => [c.slug, t(c.name)])}
           />
-          <Field label="Brand" value={f.brand} onChange={(v) => set({ brand: v })} required />
           <Field
-            label="Part number"
+            label={t("Бренд", "Brand")}
+            value={f.brand}
+            onChange={(v) => set({ brand: v })}
+            required
+          />
+          <Field
+            label={t("Артикул", "Part number")}
             value={f.partNumber}
             onChange={(v) => set({ partNumber: v })}
             required
           />
           <Field
-            label="Price (AMD)"
+            label={t("Цена (AMD)", "Price (AMD)")}
             type="number"
             value={f.price}
             onChange={(v) => set({ price: v })}
             required
           />
           <Field
-            label="Old Price (AMD, optional)"
+            label={t("Старая цена (AMD, необязательно)", "Old Price (AMD, optional)")}
             type="number"
             value={f.oldPrice}
             onChange={(v) => set({ oldPrice: v })}
           />
           <Field
-            label="Stock"
+            label={t("Остаток", "Stock")}
             type="number"
             value={f.stock}
             onChange={(v) => set({ stock: v })}
             required
           />
           <SelectField
-            label="Image"
+            label={t("Фото", "Image")}
             value={f.imageKey}
             onChange={(v) => set({ imageKey: v })}
             options={[
-              ...Object.keys(PRODUCT_IMAGES).map((k): [string, string] => [k, `Stock photo: ${k}`]),
-              [CUSTOM_IMAGE, "Upload from computer"],
+              ...Object.keys(PRODUCT_IMAGES).map((k): [string, string] => [
+                k,
+                `${t("Стандартное фото", "Stock photo")}: ${k}`,
+              ]),
+              [CUSTOM_IMAGE, t("Загрузить с компьютера", "Upload from computer")],
             ]}
           />
           {f.imageKey === CUSTOM_IMAGE ? (
             <label className="block">
-              <span className="mb-1 block text-sm font-medium">Photo</span>
+              <span className="mb-1 block text-sm font-medium">{t("Файл фото", "Photo")}</span>
               <input
                 type="file"
                 accept="image/*"
@@ -196,7 +230,9 @@ export function ProductForm({
                 className="block w-full text-sm file:mr-3 file:h-11 file:rounded-md file:border file:border-border file:bg-card file:px-4 file:text-sm file:font-medium"
               />
               <span className="mt-1 block text-xs text-muted-foreground">
-                {uploading ? "Uploading…" : (uploadError ?? (f.imageUrl ? "" : "Choose a photo"))}
+                {uploading
+                  ? t("Загрузка…", "Uploading…")
+                  : (uploadError ?? (f.imageUrl ? "" : t("Выберите фото", "Choose a photo")))}
               </span>
             </label>
           ) : null}
@@ -210,32 +246,37 @@ export function ProductForm({
         </div>
 
         <fieldset className="mt-4 rounded-md border border-border p-4">
-          <legend className="px-1 text-sm font-bold uppercase">Fitment</legend>
+          <legend className="px-1 text-sm font-bold uppercase">
+            {t("Совместимость", "Fitment")}
+          </legend>
           <div className="space-y-3">
             {f.fits.map((r, i) => (
               <div key={i} className="grid items-end gap-3 sm:grid-cols-[8rem_7rem_7rem_1fr_auto]">
                 <SelectField
-                  label="Generation"
+                  label={t("Поколение", "Generation")}
                   value={r.gen}
                   onChange={(v) => setFit(i, { gen: v as FitRow["gen"] })}
                   options={GENERATIONS.map((g) => [g.code, g.code])}
                 />
                 <Field
-                  label="Year from"
+                  label={t("Год с", "Year from")}
                   type="number"
                   value={r.from}
                   onChange={(v) => setFit(i, { from: v })}
                   required
                 />
                 <Field
-                  label="Year to"
+                  label={t("Год по", "Year to")}
                   type="number"
                   value={r.to}
                   onChange={(v) => setFit(i, { to: v })}
                   required
                 />
                 <Field
-                  label="Engines (optional, comma separated)"
+                  label={t(
+                    "Двигатели (необязательно, через запятую)",
+                    "Engines (optional, comma separated)",
+                  )}
                   value={r.engines}
                   onChange={(v) => setFit(i, { engines: v })}
                   placeholder={GENERATIONS.find((g) => g.code === r.gen)?.engines.join(", ")}
@@ -243,7 +284,7 @@ export function ProductForm({
                 <button
                   type="button"
                   onClick={() => setF((s) => ({ ...s, fits: s.fits.filter((_, j) => j !== i) }))}
-                  aria-label="Remove this fitment"
+                  aria-label={t("Удалить эту строку", "Remove this fitment")}
                   className="h-11 rounded-md border border-border px-3 hover:bg-secondary"
                 >
                   <Trash2 className="size-4" aria-hidden="true" />
@@ -261,21 +302,36 @@ export function ProductForm({
             }
             className="mt-3 inline-flex h-9 items-center gap-1 rounded-md border border-border px-3 text-sm font-medium hover:bg-secondary"
           >
-            <Plus className="size-4" aria-hidden="true" /> Add fitment
+            <Plus className="size-4" aria-hidden="true" />{" "}
+            {t("Добавить совместимость", "Add fitment")}
           </button>
         </fieldset>
 
-        <div className="mt-4">
-          <label className="mb-1 block text-sm font-medium" htmlFor="product-description">
-            Description
-          </label>
-          <textarea
-            id="product-description"
-            rows={3}
-            value={f.description}
-            onChange={(e) => set({ description: e.target.value })}
-            className="w-full rounded-md border border-input bg-card p-3 text-sm"
-          />
+        <div className="mt-4 grid gap-4 lg:grid-cols-2">
+          <div>
+            <label className="mb-1 block text-sm font-medium" htmlFor="product-description">
+              {t("Описание (русский)", "Description (Russian)")}
+            </label>
+            <textarea
+              id="product-description"
+              rows={3}
+              value={f.description}
+              onChange={(e) => set({ description: e.target.value })}
+              className="w-full rounded-md border border-input bg-card p-3 text-sm"
+            />
+          </div>
+          <div>
+            <label className="mb-1 block text-sm font-medium" htmlFor="product-description-en">
+              {t("Описание (английский)", "Description (English)")}
+            </label>
+            <textarea
+              id="product-description-en"
+              rows={3}
+              value={f.descriptionEn}
+              onChange={(e) => set({ descriptionEn: e.target.value })}
+              className="w-full rounded-md border border-input bg-card p-3 text-sm"
+            />
+          </div>
         </div>
 
         <label className="mt-4 flex items-center gap-2 text-sm">
@@ -284,7 +340,7 @@ export function ProductForm({
             checked={f.featured}
             onChange={(e) => set({ featured: e.target.checked })}
           />
-          Show on the home page ("Popular right now")
+          {t("Показывать на главной («Популярное»)", 'Show on the home page ("Popular right now")')}
         </label>
 
         <div className="mt-4 flex gap-3">
@@ -293,14 +349,14 @@ export function ProductForm({
             disabled={saving || uploading}
             className="h-11 rounded-md bg-accent px-5 text-sm font-semibold text-accent-foreground disabled:opacity-60"
           >
-            {saving ? "Saving…" : "Save product"}
+            {saving ? t("Сохранение…", "Saving…") : t("Сохранить товар", "Save product")}
           </button>
           <button
             type="button"
             onClick={onCancel}
             className="h-11 rounded-md border border-border px-5 text-sm font-semibold"
           >
-            Cancel
+            {t("Отмена", "Cancel")}
           </button>
         </div>
       </form>

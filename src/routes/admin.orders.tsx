@@ -4,33 +4,49 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { formatAMD } from "@/data/catalog";
 import { ORDER_STATUSES, type OrderStatus } from "@/data/orders";
-import { PageHeader, Panel, Pill, Table, statusTone } from "@/components/admin/ui";
+import { PageHeader, Panel, Pill, Table, statusLabel, statusTone } from "@/components/admin/ui";
 import { listOrders, setOrderStatus } from "@/lib/orders.functions";
+import { dateLocale, useLang, useT } from "@/lib/i18n";
 
 export const Route = createFileRoute("/admin/orders")({
   loader: () => listOrders(),
   component: AdminOrders,
 });
 
-const PAYMENT_LABEL = { cash: "Cash at pickup", card: "Card at pickup" } as const;
+const PAYMENT_LABEL = {
+  cash: { ru: "Наличными при получении", en: "Cash at pickup" },
+  card: { ru: "Картой при получении", en: "Card at pickup" },
+} as const;
 
 function AdminOrders() {
+  const t = useT();
+  const lang = useLang();
   const orders = Route.useLoaderData();
   const router = useRouter();
   const setStatusFn = useServerFn(setOrderStatus);
   const [busyId, setBusyId] = useState<string | null>(null);
 
   const changeStatus = async (id: string, status: OrderStatus) => {
-    if (status === "Cancelled" && !window.confirm(`Cancel order ${id}? Its parts go back into stock.`)) return;
+    if (
+      status === "Cancelled" &&
+      !window.confirm(
+        t(
+          `Отменить заказ ${id}? Его товары вернутся на склад.`,
+          `Cancel order ${id}? Its parts go back into stock.`,
+        ),
+      )
+    )
+      return;
     setBusyId(id);
     try {
       await setStatusFn({ data: { id, status } });
       // Cancelling changes stock, so reload Products too.
       await router.invalidate();
-      toast.success(`Order ${id}: ${status}`);
+      toast.success(`${t("Заказ", "Order")} ${id}: ${statusLabel(status, t)}`);
     } catch (error) {
-      toast.error("Could not update the order", {
-        description: error instanceof Error ? error.message : "Please try again.",
+      toast.error(t("Не удалось обновить заказ", "Could not update the order"), {
+        description:
+          error instanceof Error ? error.message : t("Попробуйте ещё раз.", "Please try again."),
       });
     } finally {
       setBusyId(null);
@@ -39,21 +55,45 @@ function AdminOrders() {
 
   return (
     <div>
-      <PageHeader title="Orders" subtitle="Orders placed on the website. Customers pick up and pay at the shop." />
+      <PageHeader
+        title={t("Заказы", "Orders")}
+        subtitle={t(
+          "Заказы с сайта. Клиенты забирают и оплачивают их в магазине.",
+          "Orders placed on the website. Customers pick up and pay at the shop.",
+        )}
+      />
       <Panel>
         {orders.length === 0 ? (
-          <p className="p-6 text-sm text-muted-foreground">No orders yet.</p>
+          <p className="p-6 text-sm text-muted-foreground">
+            {t("Заказов пока нет.", "No orders yet.")}
+          </p>
         ) : (
-          <Table head={["Order ID", "Customer", "Items", "Total", "Payment", "Status", "Date"]}>
+          <Table
+            head={[
+              t("Номер заказа", "Order ID"),
+              t("Клиент", "Customer"),
+              t("Товары", "Items"),
+              t("Сумма", "Total"),
+              t("Оплата", "Payment"),
+              t("Статус", "Status"),
+              t("Дата", "Date"),
+            ]}
+          >
             {orders.map((o) => (
               <tr key={o.id} className="border-t border-border align-top">
                 <td className="p-3 font-medium whitespace-nowrap">{o.id}</td>
                 <td className="p-3">
                   <p className="font-medium">{o.name}</p>
-                  <a href={`tel:${o.phone.replace(/\s/g, "")}`} className="block whitespace-nowrap text-primary hover:underline">
+                  <a
+                    href={`tel:${o.phone.replace(/\s/g, "")}`}
+                    className="block whitespace-nowrap text-primary hover:underline"
+                  >
                     {o.phone}
                   </a>
-                  <a href={`mailto:${o.email}`} className="block text-muted-foreground hover:underline">
+                  <a
+                    href={`mailto:${o.email}`}
+                    className="block text-muted-foreground hover:underline"
+                  >
                     {o.email}
                   </a>
                 </td>
@@ -67,13 +107,13 @@ function AdminOrders() {
                   </ul>
                 </td>
                 <td className="p-3 whitespace-nowrap font-medium">{formatAMD(o.total)}</td>
-                <td className="p-3 whitespace-nowrap">{PAYMENT_LABEL[o.payment]}</td>
+                <td className="p-3 whitespace-nowrap">{t(PAYMENT_LABEL[o.payment])}</td>
                 <td className="p-3">
                   {o.status === "Cancelled" ? (
-                    <Pill tone={statusTone(o.status)}>{o.status}</Pill>
+                    <Pill tone={statusTone(o.status)}>{statusLabel(o.status, t)}</Pill>
                   ) : (
                     <select
-                      aria-label={`Status of order ${o.id}`}
+                      aria-label={`${t("Статус заказа", "Status of order")} ${o.id}`}
                       value={o.status}
                       disabled={busyId === o.id}
                       onChange={(e) => void changeStatus(o.id, e.target.value as OrderStatus)}
@@ -81,14 +121,17 @@ function AdminOrders() {
                     >
                       {ORDER_STATUSES.map((s) => (
                         <option key={s} value={s}>
-                          {s}
+                          {statusLabel(s, t)}
                         </option>
                       ))}
                     </select>
                   )}
                 </td>
                 <td className="p-3 whitespace-nowrap text-muted-foreground">
-                  {new Date(o.createdAt).toLocaleString("en-GB", { dateStyle: "medium", timeStyle: "short" })}
+                  {new Date(o.createdAt).toLocaleString(dateLocale(lang), {
+                    dateStyle: "medium",
+                    timeStyle: "short",
+                  })}
                 </td>
               </tr>
             ))}

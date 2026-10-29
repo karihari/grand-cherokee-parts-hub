@@ -5,15 +5,28 @@ import { requireAdmin } from "@/server/auth.server";
 import { getDb } from "@/server/db.server";
 import { ORDER_STATUSES, type OrderItem } from "@/data/orders";
 import { orders, products } from "@/server/schema";
+import { getLang, tr } from "@/lib/i18n";
+
+const serverT = () => tr(getLang());
 
 const placeOrderSchema = z.object({
   name: z.string().trim().min(2).max(120),
   // "+374 98281116": dial code, a space, then the local number.
-  phone: z.string().trim().regex(/^\+\d{1,4} \d{5,14}$/, "Enter a valid phone number"),
+  phone: z
+    .string()
+    .trim()
+    .refine(
+      (v) => /^\+\d{1,4} \d{5,14}$/.test(v),
+      () => ({
+        message: serverT()("Введите корректный номер телефона", "Enter a valid phone number"),
+      }),
+    ),
   email: z.string().trim().email().max(200),
   payment: z.enum(["card", "cash"]),
   items: z
-    .array(z.object({ productId: z.string().min(1).max(40), qty: z.number().int().min(1).max(100) }))
+    .array(
+      z.object({ productId: z.string().min(1).max(40), qty: z.number().int().min(1).max(100) }),
+    )
     .min(1)
     .max(50),
 });
@@ -22,7 +35,13 @@ export type PlaceOrderInput = z.infer<typeof placeOrderSchema>;
 
 function dbOrThrow() {
   const db = getDb();
-  if (!db) throw new Error("Orders are unavailable right now. Please message us on WhatsApp.");
+  if (!db)
+    throw new Error(
+      serverT()(
+        "Заказы сейчас недоступны. Напишите нам в WhatsApp.",
+        "Orders are unavailable right now. Please message us on WhatsApp.",
+      ),
+    );
   return db;
 }
 
@@ -50,11 +69,21 @@ export const placeOrder = createServerFn({ method: "POST" })
     for (const i of data.items) qtyById.set(i.productId, (qtyById.get(i.productId) ?? 0) + i.qty);
 
     // Prices come from the database, never from the browser.
-    const rows = await db.select().from(products).where(inArray(products.id, [...qtyById.keys()]));
+    const rows = await db
+      .select()
+      .from(products)
+      .where(inArray(products.id, [...qtyById.keys()]));
     const items: OrderItem[] = [];
     for (const [productId, qty] of qtyById) {
       const row = rows.find((r) => r.id === productId);
-      if (!row) return { ok: false as const, error: "A part in your cart is no longer for sale. Please remove it." };
+      if (!row)
+        return {
+          ok: false as const,
+          error: serverT()(
+            "Одна из запчастей в корзине больше не продаётся. Удалите её.",
+            "A part in your cart is no longer for sale. Please remove it.",
+          ),
+        };
       items.push({ productId, name: row.name, price: row.price, qty });
     }
 
@@ -68,7 +97,13 @@ export const placeOrder = createServerFn({ method: "POST" })
         .returning({ id: products.id });
       if (!ok) {
         await changeStock(reserved, 1);
-        return { ok: false as const, error: `Not enough stock for "${item.name}". Please lower the quantity.` };
+        return {
+          ok: false as const,
+          error: serverT()(
+            `Недостаточно товара «${item.name}» на складе. Уменьшите количество.`,
+            `Not enough stock for "${item.name}". Please lower the quantity.`,
+          ),
+        };
       }
       reserved.push(item);
     }
@@ -96,14 +131,26 @@ export const placeOrder = createServerFn({ method: "POST" })
 
 // Sends the new order to the Make webhook, if one is set, so the shop gets a message.
 // The order is already saved, so a failure here is only logged.
-async function notifyShop(order: { id: string; name: string; phone: string; email: string; payment: string; items: OrderItem[]; total: number }) {
+async function notifyShop(order: {
+  id: string;
+  name: string;
+  phone: string;
+  email: string;
+  payment: string;
+  items: OrderItem[];
+  total: number;
+}) {
   const url = process.env["MAKE_WEBHOOK_URL"];
   if (!url) return;
   try {
     const res = await fetch(url, {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ source: "gcparts-order", submittedAt: new Date().toISOString(), ...order }),
+      body: JSON.stringify({
+        source: "gcparts-order",
+        submittedAt: new Date().toISOString(),
+        ...order,
+      }),
     });
     if (!res.ok) console.error(`Make webhook responded ${res.status}`);
   } catch (error) {
@@ -114,7 +161,9 @@ async function notifyShop(order: { id: string; name: string; phone: string; emai
 // The customer's own orders, looked up by the ids saved in their browser.
 // Contact details are left out on purpose.
 export const getOrderStatuses = createServerFn({ method: "POST" })
-  .validator((data: unknown) => z.object({ ids: z.array(z.string().min(1).max(40)).max(100) }).parse(data))
+  .validator((data: unknown) =>
+    z.object({ ids: z.array(z.string().min(1).max(40)).max(100) }).parse(data),
+  )
   .handler(async ({ data }) => {
     const db = getDb();
     if (!db || data.ids.length === 0) return [];
@@ -140,8 +189,14 @@ export const setOrderStatus = createServerFn({ method: "POST" })
     await requireAdmin();
     const db = dbOrThrow();
     const [order] = await db.select().from(orders).where(eq(orders.id, data.id)).limit(1);
-    if (!order) throw new Error("This order no longer exists.");
-    if (order.status === "Cancelled") throw new Error("A cancelled order cannot be changed.");
+    if (!order)
+      throw new Error(
+        serverT()("Этот заказ больше не существует.", "This order no longer exists."),
+      );
+    if (order.status === "Cancelled")
+      throw new Error(
+        serverT()("Отменённый заказ нельзя изменить.", "A cancelled order cannot be changed."),
+      );
     if (order.status === data.status) return { ok: true as const };
 
     // The status guard stops two clicks on "Cancelled" from restocking twice.

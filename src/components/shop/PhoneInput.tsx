@@ -1,3 +1,5 @@
+import { useT } from "@/lib/i18n";
+
 // Armenia first, then the countries customers most often call from.
 export const PHONE_COUNTRIES = [
   { iso: "AM", name: "Armenia", flag: "🇦🇲", dial: "+374" },
@@ -41,10 +43,11 @@ export function PhoneInput({
   onNumberChange: (v: string) => void;
   required?: boolean;
 }) {
+  const t = useT();
   return (
     <div className="flex gap-2">
       <select
-        aria-label="Country code"
+        aria-label={t("Код страны", "Country code")}
         value={country}
         onChange={(e) => onCountryChange(e.target.value as PhoneCountry)}
         className="h-11 w-32 shrink-0 rounded-md border border-input bg-card px-2 text-sm"
@@ -63,7 +66,7 @@ export function PhoneInput({
         required={required}
         value={number}
         onChange={(e) => onNumberChange(e.target.value)}
-        placeholder={country === "AM" ? "98 123456" : "Phone number"}
+        placeholder={country === "AM" ? "98 123456" : t("Номер телефона", "Phone number")}
         className="h-11 min-w-0 flex-1 rounded-md border border-input bg-card px-3 text-sm"
       />
     </div>

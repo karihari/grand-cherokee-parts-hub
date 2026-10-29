@@ -1,4 +1,5 @@
 import { deleteCookie, getCookie, setCookie } from "@tanstack/react-start/server";
+import { getLang, tr } from "@/lib/i18n";
 
 // The Admin signs in with ADMIN_PASSWORD. The session is a cookie holding an
 // expiry time signed with SESSION_SECRET (HMAC-SHA256), so no session table is needed.
@@ -81,5 +82,6 @@ export async function isAdmin() {
 }
 
 export async function requireAdmin() {
-  if (!(await isAdmin())) throw new Error("Not signed in as Admin");
+  if (!(await isAdmin()))
+    throw new Error(tr(getLang())("Вы не вошли как администратор", "Not signed in as Admin"));
 }

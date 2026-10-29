@@ -1,3 +1,4 @@
+import type { L, T } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 
 export function PageHeader({
@@ -49,20 +50,59 @@ const TONE: Record<string, string> = {
   muted: "bg-secondary text-secondary-foreground",
 };
 
-export function Pill({ children, tone = "muted" }: { children: React.ReactNode; tone?: keyof typeof TONE }) {
+export function Pill({
+  children,
+  tone = "muted",
+}: {
+  children: React.ReactNode;
+  tone?: keyof typeof TONE;
+}) {
   return (
-    <span className={cn("inline-block whitespace-nowrap rounded-md px-2 py-1 text-xs font-semibold", TONE[tone])}>
+    <span
+      className={cn(
+        "inline-block whitespace-nowrap rounded-md px-2 py-1 text-xs font-semibold",
+        TONE[tone],
+      )}
+    >
       {children}
     </span>
   );
 }
 
 export function statusTone(status: string): keyof typeof TONE {
-  if (["Delivered", "Completed", "Paid", "Active", "Approved", "Published", "Resolved"].includes(status)) return "good";
-  if (["Pending", "Ready for pickup", "Waiting", "Scheduled", "Processing"].includes(status)) return "warn";
+  if (
+    ["Delivered", "Completed", "Paid", "Active", "Approved", "Published", "Resolved"].includes(
+      status,
+    )
+  )
+    return "good";
+  if (["Pending", "Waiting", "Scheduled", "Processing"].includes(status)) return "warn";
   if (["Cancelled", "Refunded", "Returned", "Blocked", "Hidden"].includes(status)) return "bad";
   if (["Shipped", "Confirmed", "New", "Open"].includes(status)) return "info";
   return "muted";
+}
+
+// Statuses are stored in English; the admin panel shows them in the chosen language.
+const STATUS_LABELS: Record<string, L> = {
+  New: { ru: "Новый", en: "New" },
+  Completed: { ru: "Выполнен", en: "Completed" },
+  Cancelled: { ru: "Отменён", en: "Cancelled" },
+  Active: { ru: "Активен", en: "Active" },
+  Blocked: { ru: "Заблокирован", en: "Blocked" },
+  Approved: { ru: "Одобрен", en: "Approved" },
+  Pending: { ru: "На проверке", en: "Pending" },
+  Open: { ru: "Открыт", en: "Open" },
+  Waiting: { ru: "Ожидает", en: "Waiting" },
+  Resolved: { ru: "Решён", en: "Resolved" },
+  Published: { ru: "Опубликован", en: "Published" },
+  Hidden: { ru: "Скрыт", en: "Hidden" },
+  Scheduled: { ru: "Запланирована", en: "Scheduled" },
+  Ended: { ru: "Завершена", en: "Ended" },
+};
+
+export function statusLabel(status: string, t: T) {
+  const label = STATUS_LABELS[status];
+  return label ? t(label) : status;
 }
 
 export function RowActions({ items }: { items: string[] }) {
