@@ -1,5 +1,6 @@
 // Replaces every Product with the rows of a CSV export
-// (sku,title_ru,title_en,category_ru,category_en,quantity,price,…,description_ru,description_en,vehicle,…).
+// (sku,title_ru,title_en,category_ru,category_en,quantity,position,price,currency,…,vehicle,vin,…).
+// An empty price is imported as 0 for the Admin to fill in later.
 // Without --apply it only prints what would be imported.
 // Run with: node --env-file-if-exists=.env.local src/server/import-products.ts <file.csv> [--apply]
 import { readFileSync } from "node:fs";
@@ -8,14 +9,52 @@ import { drizzle } from "drizzle-orm/neon-http";
 import type { Fitment } from "../data/catalog";
 import { products } from "./schema.ts";
 
+const BODY = { slug: "body", image: "body" };
+const ENGINE = { slug: "engine", image: "engine" };
+const TRANSMISSION = { slug: "transmission", image: "engine" };
+const SUSPENSION = { slug: "suspension", image: "suspension" };
+const INTERIOR = { slug: "interior", image: "interior" };
+
 const CATEGORY: Record<string, { slug: string; image: string }> = {
-  Body: { slug: "body", image: "body" },
-  Bumper: { slug: "bumpers", image: "body" },
-  Glass: { slug: "glass", image: "body" },
+  "Body panels": BODY,
+  "Front end structure": BODY,
+  "Front bumper": { slug: "bumpers", image: "body" },
+  "Rear bumper": { slug: "bumpers", image: "body" },
+  Doors: BODY,
+  "Liftgate (tailgate)": BODY,
+  "Glass & mirrors": { slug: "glass", image: "body" },
   Lighting: { slug: "lighting", image: "lighting" },
-  Electrical: { slug: "electrical", image: "electrical" },
-  Cooling: { slug: "cooling", image: "engine" },
-  Safety: { slug: "interior", image: "interior" },
+  "Engine — 3.6L V6 Pentastar": ENGINE,
+  "Ignition & engine sensors": ENGINE,
+  "Fuel system": ENGINE,
+  "Air intake": ENGINE,
+  Exhaust: { slug: "exhaust", image: "engine" },
+  "Cooling system": { slug: "cooling", image: "engine" },
+  "Accessory drive": ENGINE,
+  "Transmission — 8-speed automatic": TRANSMISSION,
+  "4WD drivetrain": TRANSMISSION,
+  "Front suspension": SUSPENSION,
+  "Rear suspension": SUSPENSION,
+  Steering: { slug: "steering", image: "suspension" },
+  Brakes: { slug: "brakes", image: "brakes" },
+  "Wheels & tires": { slug: "wheels", image: "wheels" },
+  "Electrical & modules": { slug: "electrical", image: "electrical" },
+  "Instrument panel & infotainment": INTERIOR,
+  "HVAC (heating & A/C)": { slug: "cooling", image: "engine" },
+  "Interior & seats": INTERIOR,
+  "Safety / airbags": INTERIOR,
+  "Underbody & frame": BODY,
+};
+
+// The position column, keyed by its English part ("L/R · Лев/Прав" → "L/R").
+const POSITION: Record<string, { ru: string; en: string }> = {
+  "L/R": { ru: "Сторона: левая и правая.", en: "Side: left and right." },
+  "F/R": { ru: "Положение: спереди и сзади.", en: "Position: front and rear." },
+  "FL/FR/RL/RR": {
+    ru: "Положение: спереди и сзади, слева и справа.",
+    en: "Position: front and rear, left and right.",
+  },
+  Set: { ru: "Продаётся комплектом.", en: "Sold as a set." },
 };
 
 // Notes meant for the shop, and set-price notes that would contradict the per-piece price.
@@ -95,16 +134,22 @@ if (!file) {
 const rows = parseCsv(readFileSync(file, "utf8")).map((r) => {
   const category = CATEGORY[r["category_en"]!];
   if (!category) throw new Error(`${r["sku"]}: unknown category "${r["category_en"]}"`);
-  if (r["currency"] !== "AMD") throw new Error(`${r["sku"]}: currency must be AMD`);
+  if (r["price"] && r["currency"] !== "AMD") throw new Error(`${r["sku"]}: currency must be AMD`);
   const qty = Number(r["quantity"]);
-  const price = Number(r["price"]);
+  const price = Number(r["price"] || 0);
   if (!Number.isInteger(qty) || qty < 1 || !Number.isFinite(price))
     throw new Error(`${r["sku"]}: bad quantity or price`);
+  const positionKey = (r["position"] ?? "").split(" · ")[0]!;
+  const position = POSITION[positionKey];
+  if (positionKey && !position) throw new Error(`${r["sku"]}: unknown position "${r["position"]}"`);
+  const name = clean(r["title_ru"]!);
   const nameEn = clean(r["title_en"]!);
+  const vehicle = r["vehicle"]!;
+  const vin = r["vin"] ? ` VIN ${r["vin"]}.` : "";
   return {
     id: r["sku"]!,
     slug: `${slugify(nameEn)}-${r["sku"]!.toLowerCase()}`,
-    name: clean(r["title_ru"]!),
+    name,
     nameEn,
     category: category.slug,
     brand: "Jeep",
@@ -113,9 +158,9 @@ const rows = parseCsv(readFileSync(file, "utf8")).map((r) => {
     price,
     stock: qty,
     image: category.image,
-    description: clean(r["description_ru"]!),
-    descriptionEn: clean(r["description_en"]!),
-    fits: fitsOf(r["vehicle"]!),
+    description: `${name} для ${vehicle}.${vin} ${position?.ru ?? ""}`.trim(),
+    descriptionEn: `${nameEn} for ${vehicle}.${vin} ${position?.en ?? ""}`.trim(),
+    fits: fitsOf(vehicle),
   };
 });
 
