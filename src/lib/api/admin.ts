@@ -70,6 +70,7 @@ export const resetAdminPassword = (id: string, password: string) =>
 
 export type ProductInput = {
   name: string;
+  nameEn: string;
   category: string;
   brand: string;
   partNumber: string;
@@ -78,6 +79,7 @@ export type ProductInput = {
   stock: number;
   image: string;
   description: string;
+  descriptionEn: string;
   fits: Fitment[];
   featured: boolean;
 };
@@ -118,3 +120,26 @@ export const listOrders = (
 
 export const setOrderStatus = (id: string, status: OrderStatus) =>
   api<AdminOrder>(`/admin/orders/${id}/status`, { method: "PATCH", body: { status } });
+
+// ---- Messages (contact form) ----
+
+export type EnquiryStatus = "New" | "Resolved";
+
+export type AdminEnquiry = {
+  id: string;
+  name: string;
+  phone: string;
+  email: string;
+  part: string;
+  message: string;
+  vehicle: string;
+  status: EnquiryStatus;
+  createdAt: string;
+};
+
+export const listEnquiries = (
+  query: { page?: number; perPage?: number; status?: EnquiryStatus; q?: string } = {},
+) => api<Paginated<AdminEnquiry>>("/admin/enquiries", { query });
+
+export const setEnquiryStatus = (id: string, status: EnquiryStatus) =>
+  api<AdminEnquiry>(`/admin/enquiries/${id}/status`, { method: "PATCH", body: { status } });

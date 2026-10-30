@@ -11,6 +11,7 @@ type FitRow = { gen: "WK" | "WK2" | "WL"; from: string; to: string; engines: str
 
 type FormState = {
   name: string;
+  nameEn: string;
   category: string;
   brand: string;
   partNumber: string;
@@ -20,6 +21,7 @@ type FormState = {
   imageKey: string;
   imageUrl: string;
   description: string;
+  descriptionEn: string;
   featured: boolean;
   fits: FitRow[];
 };
@@ -34,6 +36,7 @@ function initialState(product: Product | null): FormState {
   if (!product) {
     return {
       name: "",
+      nameEn: "",
       category: CATEGORIES[0]?.slug ?? "",
       brand: "",
       partNumber: "",
@@ -43,6 +46,7 @@ function initialState(product: Product | null): FormState {
       imageKey: "engine",
       imageUrl: "",
       description: "",
+      descriptionEn: "",
       featured: false,
       fits: [{ gen: "WK2", from: "2011", to: "2021", engines: "" }],
     };
@@ -50,6 +54,7 @@ function initialState(product: Product | null): FormState {
   const key = imageKeyOf(product.image);
   return {
     name: product.name,
+    nameEn: product.nameEn ?? "",
     category: product.category,
     brand: product.brand,
     partNumber: product.partNumber,
@@ -59,6 +64,7 @@ function initialState(product: Product | null): FormState {
     imageKey: key ?? CUSTOM_IMAGE,
     imageUrl: key ? "" : product.image,
     description: product.description,
+    descriptionEn: product.descriptionEn ?? "",
     featured: product.featured ?? false,
     fits: product.fits.map((f) => ({
       gen: f.gen,
@@ -72,6 +78,7 @@ function initialState(product: Product | null): FormState {
 function toInput(f: FormState): ProductInput {
   const input: ProductInput = {
     name: f.name,
+    nameEn: f.nameEn,
     category: f.category,
     brand: f.brand,
     partNumber: f.partNumber,
@@ -80,6 +87,7 @@ function toInput(f: FormState): ProductInput {
     stock: Number(f.stock),
     image: f.imageKey === CUSTOM_IMAGE ? storedImagePath(f.imageUrl) : f.imageKey,
     description: f.description,
+    descriptionEn: f.descriptionEn,
     featured: f.featured,
     fits: f.fits.map((r) => {
       const engines = r.engines
@@ -151,6 +159,11 @@ export function ProductForm({
             value={f.name}
             onChange={(v) => set({ name: v })}
             required
+          />
+          <Field
+            label={t("Название товара (английский)", "Product name (English)")}
+            value={f.nameEn}
+            onChange={(v) => set({ nameEn: v })}
           />
           <SelectField
             label={t("Категория", "Category")}
@@ -303,6 +316,18 @@ export function ProductForm({
               rows={3}
               value={f.description}
               onChange={(e) => set({ description: e.target.value })}
+              className="w-full rounded-md border border-input bg-card p-3 text-sm"
+            />
+          </div>
+          <div>
+            <label className="mb-1 block text-sm font-medium" htmlFor="product-description-en">
+              {t("Описание (английский)", "Description (English)")}
+            </label>
+            <textarea
+              id="product-description-en"
+              rows={3}
+              value={f.descriptionEn}
+              onChange={(e) => set({ descriptionEn: e.target.value })}
               className="w-full rounded-md border border-input bg-card p-3 text-sm"
             />
           </div>

@@ -15,7 +15,10 @@ const MESSAGES: Record<string, string> = {
   TOO_MANY_REQUESTS: "Too many attempts. Please wait a minute and try again.",
   ORIGIN_NOT_ALLOWED: "This website is not allowed to talk to the shop server.",
   ORDER_PRODUCT_UNAVAILABLE: "A part in your cart is no longer for sale. Please remove it.",
+  ORDER_PRODUCT_NO_PRICE:
+    "A part in your cart does not have a price yet. Message us or remove it from your cart.",
   ORDER_ALREADY_CANCELLED: "A cancelled order cannot be changed.",
+  ENQUIRY_NOT_FOUND: "This message no longer exists.",
   ORDER_NOT_FOUND: "This order no longer exists.",
   PRODUCT_NOT_FOUND: "This product no longer exists.",
   PRODUCT_OLD_PRICE_NOT_HIGHER: "Old price must be higher than price.",
