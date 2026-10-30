@@ -14,11 +14,11 @@ import { formatAMD, productName } from "@/data/catalog";
 import { ADMIN_CUSTOMERS, ADMIN_SELLERS, SALES_SERIES } from "@/data/admin";
 import { PageHeader, Panel, Pill, Table, statusLabel, statusTone } from "@/components/admin/ui";
 import { useProducts } from "@/lib/products";
-import { listOrders } from "@/lib/orders.functions";
+import { listOrders } from "@/lib/api/admin";
 import { useT, useLang } from "@/lib/i18n";
 
 export const Route = createFileRoute("/admin/")({
-  loader: () => listOrders(),
+  loader: async () => (await listOrders({ perPage: 200 })).data,
   component: AdminDashboard,
 });
 

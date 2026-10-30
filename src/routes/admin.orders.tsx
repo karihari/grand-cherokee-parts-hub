@@ -1,15 +1,15 @@
 import { createFileRoute, useRouter } from "@tanstack/react-router";
-import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { toast } from "sonner";
 import { formatAMD } from "@/data/catalog";
 import { ORDER_STATUSES, type OrderStatus } from "@/data/orders";
 import { PageHeader, Panel, Pill, Table, statusLabel, statusTone } from "@/components/admin/ui";
-import { listOrders, setOrderStatus } from "@/lib/orders.functions";
+import { listOrders, setOrderStatus } from "@/lib/api/admin";
+import { errorText } from "@/lib/api/errors";
 import { dateLocale, useLang, useT } from "@/lib/i18n";
 
 export const Route = createFileRoute("/admin/orders")({
-  loader: () => listOrders(),
+  loader: () => listOrders({ perPage: 200 }),
   component: AdminOrders,
 });
 
@@ -21,9 +21,8 @@ const PAYMENT_LABEL = {
 function AdminOrders() {
   const t = useT();
   const lang = useLang();
-  const orders = Route.useLoaderData();
+  const { data: orders, meta } = Route.useLoaderData();
   const router = useRouter();
-  const setStatusFn = useServerFn(setOrderStatus);
   const [busyId, setBusyId] = useState<string | null>(null);
 
   const changeStatus = async (id: string, status: OrderStatus) => {
@@ -39,14 +38,13 @@ function AdminOrders() {
       return;
     setBusyId(id);
     try {
-      await setStatusFn({ data: { id, status } });
+      await setOrderStatus(id, status);
       // Cancelling changes stock, so reload Products too.
       await router.invalidate();
       toast.success(`${t("Заказ", "Order")} ${id}: ${statusLabel(status, t)}`);
     } catch (error) {
       toast.error(t("Не удалось обновить заказ", "Could not update the order"), {
-        description:
-          error instanceof Error ? error.message : t("Попробуйте ещё раз.", "Please try again."),
+        description: errorText(error),
       });
     } finally {
       setBusyId(null);
@@ -57,10 +55,17 @@ function AdminOrders() {
     <div>
       <PageHeader
         title={t("Заказы", "Orders")}
-        subtitle={t(
+        subtitle={`${t(
           "Заказы с сайта. Клиенты забирают и оплачивают их в магазине.",
           "Orders placed on the website. Customers pick up and pay at the shop.",
-        )}
+        )}${
+          meta.total > orders.length
+            ? t(
+                ` Показаны последние ${orders.length} из ${meta.total}.`,
+                ` Showing the newest ${orders.length} of ${meta.total}.`,
+              )
+            : ""
+        }`}
       />
       <Panel>
         {orders.length === 0 ? (

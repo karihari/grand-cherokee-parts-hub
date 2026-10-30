@@ -1,8 +1,7 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
-import { ROLES } from "@/data/admin";
 import { PHONE_DISPLAY, TELEGRAM_USERNAME } from "@/lib/contact";
-import { PageHeader, Panel, Table } from "@/components/admin/ui";
+import { PageHeader, Panel } from "@/components/admin/ui";
 import { cn } from "@/lib/utils";
 import { useT } from "@/lib/i18n";
 
@@ -50,16 +49,22 @@ function AdminSettings() {
       </div>
 
       {tab === "roles" ? (
-        <Panel>
-          <Table head={[t("Роль", "Role"), t("Сотрудники", "People"), t("Права", "Permissions")]}>
-            {ROLES.map((r) => (
-              <tr key={r.role.en} className="border-t border-border">
-                <td className="p-3 font-medium">{t(r.role)}</td>
-                <td className="p-3">{r.people}</td>
-                <td className="p-3 text-muted-foreground">{t(r.permissions)}</td>
-              </tr>
-            ))}
-          </Table>
+        <Panel className="p-5 text-sm">
+          {t(
+            "Аккаунты и роли администраторов настраиваются на странице",
+            "Admin accounts and roles are managed on the",
+          )}{" "}
+          <Link to="/admin/users" className="font-semibold text-primary underline">
+            {t("Администраторы", "Admin users")}
+          </Link>{" "}
+          {t(
+            "Свой пароль и устройства — в разделе",
+            "page. Your own password and devices are under",
+          )}{" "}
+          <Link to="/admin/account" className="font-semibold text-primary underline">
+            {t("Мой аккаунт", "My account")}
+          </Link>
+          .
         </Panel>
       ) : (
         <Panel className="p-5">

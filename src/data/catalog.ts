@@ -7,6 +7,7 @@ import electrical from "@/assets/part-electrical.jpg";
 import body from "@/assets/part-body.jpg";
 import wheels from "@/assets/part-wheels.jpg";
 import interior from "@/assets/part-interior.jpg";
+import { apiImageUrl } from "@/lib/api/client";
 import type { L, Lang, T } from "@/lib/i18n";
 
 export type Generation = {
@@ -229,9 +230,10 @@ export const PRODUCT_IMAGES: Record<string, string> = {
   interior,
 };
 
-// Product images are stored as a key of PRODUCT_IMAGES or as a full URL.
+// Product images are stored as a key of PRODUCT_IMAGES, an uploaded "/images/<id>"
+// (served by the API) or a full URL.
 export function productImageUrl(image: string) {
-  return PRODUCT_IMAGES[image] ?? image;
+  return PRODUCT_IMAGES[image] ?? apiImageUrl(image);
 }
 
 export function categoryName(slug: string, t: T) {

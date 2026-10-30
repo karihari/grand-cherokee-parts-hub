@@ -1,31 +1,32 @@
 import { createFileRoute, useRouter } from "@tanstack/react-router";
-import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { toast } from "sonner";
 import { PageHeader, Panel, Pill, Table, statusLabel, statusTone } from "@/components/admin/ui";
-import { listEnquiries, setEnquiryStatus } from "@/lib/enquiry.functions";
+import { listEnquiries, setEnquiryStatus } from "@/lib/api/admin";
+import { errorText } from "@/lib/api/errors";
 import { dateLocale, useLang, useT } from "@/lib/i18n";
 
 export const Route = createFileRoute("/admin/messages")({
-  loader: () => listEnquiries(),
+  loader: () => listEnquiries({ perPage: 200 }),
   component: AdminMessages,
 });
 
 function AdminMessages() {
   const t = useT();
   const lang = useLang();
-  const messages = Route.useLoaderData();
+  const { data: messages } = Route.useLoaderData();
   const router = useRouter();
-  const setStatusFn = useServerFn(setEnquiryStatus);
   const [busyId, setBusyId] = useState<string | null>(null);
 
   const toggle = async (id: string, resolved: boolean) => {
     setBusyId(id);
     try {
-      await setStatusFn({ data: { id, status: resolved ? "New" : "Resolved" } });
+      await setEnquiryStatus(id, resolved ? "New" : "Resolved");
       await router.invalidate();
-    } catch {
-      toast.error(t("Не удалось обновить сообщение", "Could not update the message"));
+    } catch (error) {
+      toast.error(t("Не удалось обновить сообщение", "Could not update the message"), {
+        description: errorText(error),
+      });
     } finally {
       setBusyId(null);
     }

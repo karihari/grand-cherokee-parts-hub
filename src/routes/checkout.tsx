@@ -1,5 +1,4 @@
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
-import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { Check, CheckCircle2, Store } from "lucide-react";
 import { toast } from "sonner";
@@ -7,7 +6,8 @@ import { formatAMD, hasPrice, priceLabel, productName } from "@/data/catalog";
 import { useStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
 import { findProduct, useProducts } from "@/lib/products";
-import { placeOrder } from "@/lib/orders.functions";
+import { placeOrder } from "@/lib/api/shop";
+import { errorText } from "@/lib/api/errors";
 import {
   cleanLocalNumber,
   dialCode,
@@ -70,7 +70,6 @@ function CheckoutPage() {
   const products = useProducts();
   const { cart, cartSubtotal, clearCart, addOrder } = useStore();
   const router = useRouter();
-  const placeOrderFn = useServerFn(placeOrder);
   const [step, setStep] = useState(0);
   const [placed, setPlaced] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -95,21 +94,13 @@ function CheckoutPage() {
   const submit = async () => {
     setSubmitting(true);
     try {
-      const result = await placeOrderFn({
-        data: {
-          name: form.name,
-          phone: fullPhone,
-          email: form.email,
-          payment: form.payment,
-          items: lines.map(({ product, qty }) => ({ productId: product.id, qty })),
-        },
+      const result = await placeOrder({
+        name: form.name,
+        phone: fullPhone,
+        email: form.email,
+        payment: form.payment,
+        items: lines.map(({ product, qty }) => ({ productId: product.id, qty })),
       });
-      if (!result.ok) {
-        toast.error(t("Не удалось оформить заказ", "Could not place the order"), {
-          description: result.error,
-        });
-        return;
-      }
       addOrder({
         id: result.id,
         createdAt: result.createdAt,
@@ -122,12 +113,8 @@ function CheckoutPage() {
       // Reload Products so the new stock levels show.
       void router.invalidate();
     } catch (error) {
-      console.error(error);
       toast.error(t("Не удалось оформить заказ", "Could not place the order"), {
-        description: t(
-          "Попробуйте ещё раз или напишите нам в WhatsApp.",
-          "Please try again, or message us on WhatsApp.",
-        ),
+        description: errorText(error),
       });
     } finally {
       setSubmitting(false);

@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { MessageCircle, Send } from "lucide-react";
 import { productName, type Product } from "@/data/catalog";
 import { useStore } from "@/lib/store";
@@ -17,7 +18,11 @@ export function ContactButtons({
   const t = useT();
   const lang = useLang();
   const { activeVehicle } = useStore();
-  const message = () => productEnquiry(lang, product, activeVehicle, productUrl(product.slug));
+  // The page URL is only known in the browser. Filling it in after hydration keeps the
+  // server-rendered link identical to the first client render (no hydration mismatch).
+  const [url, setUrl] = useState("");
+  useEffect(() => setUrl(productUrl(product.slug)), [product.slug]);
+  const message = () => productEnquiry(lang, product, activeVehicle, url);
 
   if (variant === "icon") {
     return (

@@ -16,12 +16,12 @@ import { ContactButtons } from "@/components/shop/ContactButtons";
 import { ProductCard } from "@/components/shop/ProductCard";
 import { cn } from "@/lib/utils";
 import { useProducts } from "@/lib/products";
-import { getProductBySlug } from "@/lib/products.functions";
+import { fetchProductBySlug } from "@/lib/api/shop";
 import { plural, tr, useLang, useT } from "@/lib/i18n";
 
 export const Route = createFileRoute("/product/$slug")({
   loader: async ({ params }) => {
-    const product = await getProductBySlug({ data: { slug: params.slug } });
+    const product = await fetchProductBySlug(params.slug);
     if (!product) throw notFound();
     return { product };
   },
