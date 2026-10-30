@@ -1,22 +1,35 @@
-import { formatAMD, type Product } from "@/data/catalog";
+import { priceLabel, productName, type Product } from "@/data/catalog";
 import { vehicleLabel, type Vehicle } from "@/lib/store";
+import { tr, type Lang } from "@/lib/i18n";
 
 export const WHATSAPP_NUMBER = "37455050602";
 export const TELEGRAM_USERNAME = "gcparts_support_bot";
 export const PHONE_DISPLAY = "+374 55 050 602";
 
-export function productEnquiry(product: Product, vehicle: Vehicle | null, url?: string) {
+export function productEnquiry(
+  lang: Lang,
+  product: Product,
+  vehicle: Vehicle | null,
+  url?: string,
+) {
+  const t = tr(lang);
   const lines = [
-    "Hello, I am interested in this Grand Cherokee part.",
+    t(
+      "Здравствуйте, меня интересует эта запчасть для Grand Cherokee.",
+      "Hello, I am interested in this Grand Cherokee part.",
+    ),
     "",
-    `Product: ${product.name}`,
-    `Product ID: ${product.id}`,
-    `Part Number: ${product.partNumber}`,
-    `Price: ${formatAMD(product.price)}`,
-    `Vehicle: ${vehicle ? vehicleLabel(vehicle) : "not selected yet"}`,
+    `${t("Товар", "Product")}: ${productName(product, lang)}`,
+    `${t("ID товара", "Product ID")}: ${product.id}`,
+    `${t("Артикул", "Part Number")}: ${product.partNumber}`,
+    `${t("Цена", "Price")}: ${priceLabel(product.price, t)}`,
+    `${t("Автомобиль", "Vehicle")}: ${vehicle ? vehicleLabel(vehicle) : t("ещё не выбран", "not selected yet")}`,
   ];
-  if (url) lines.push(`Link: ${url}`);
-  lines.push("", "Is this part available and compatible?");
+  if (url) lines.push(`${t("Ссылка", "Link")}: ${url}`);
+  lines.push(
+    "",
+    t("Эта запчасть есть в наличии и подойдёт?", "Is this part available and compatible?"),
+  );
   return lines.join("\n");
 }
 

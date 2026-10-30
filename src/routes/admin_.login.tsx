@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Lock } from "lucide-react";
 import { getMe, login } from "@/lib/api/admin";
 import { errorText } from "@/lib/api/errors";
+import { tr, useT } from "@/lib/i18n";
 
 type Search = { redirect?: string | undefined };
 
@@ -21,13 +22,20 @@ export const Route = createFileRoute("/admin_/login")({
     const user = await getMe().catch(() => null);
     if (user) throw redirect({ href: safeRedirect(search.redirect) });
   },
-  head: () => ({
-    meta: [{ title: "Admin sign in | GC Parts" }, { name: "robots", content: "noindex" }],
-  }),
+  head: ({ match }) => {
+    const t = tr(match.context.lang);
+    return {
+      meta: [
+        { title: t("Вход в админку | GC Parts", "Admin sign in | GC Parts") },
+        { name: "robots", content: "noindex" },
+      ],
+    };
+  },
   component: AdminLoginPage,
 });
 
 function AdminLoginPage() {
+  const t = useT();
   const search = Route.useSearch();
   const router = useRouter();
   const [email, setEmail] = useState("");
@@ -57,7 +65,7 @@ function AdminLoginPage() {
       >
         <div className="flex items-center gap-2">
           <Lock className="size-5 text-primary" aria-hidden="true" />
-          <h1 className="text-xl font-bold">Admin sign in</h1>
+          <h1 className="text-xl font-bold">{t("Вход в админку", "Admin sign in")}</h1>
         </div>
         <label htmlFor="admin-email" className="mt-5 mb-1 block text-sm font-medium">
           Email
@@ -73,7 +81,7 @@ function AdminLoginPage() {
           className="h-11 w-full rounded-md border border-input bg-card px-3 text-sm"
         />
         <label htmlFor="admin-password" className="mt-4 mb-1 block text-sm font-medium">
-          Password
+          {t("Пароль", "Password")}
         </label>
         <input
           id="admin-password"
@@ -103,13 +111,13 @@ function AdminLoginPage() {
           disabled={busy}
           className="mt-5 h-11 w-full rounded-md bg-primary text-sm font-semibold text-primary-foreground disabled:opacity-60"
         >
-          {busy ? "Signing in…" : "Sign in"}
+          {busy ? t("Вход…", "Signing in…") : t("Войти", "Sign in")}
         </button>
         <Link
           to="/"
           className="mt-4 block text-center text-xs text-muted-foreground hover:text-primary"
         >
-          ← Back to storefront
+          {t("← Вернуться в магазин", "← Back to storefront")}
         </Link>
       </form>
     </div>

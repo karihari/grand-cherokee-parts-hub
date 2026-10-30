@@ -4,11 +4,13 @@ import { Check, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 import { YEARS, enginesFor, generationsForYear } from "@/data/catalog";
 import { useStore } from "@/lib/store";
+import { useT } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 
 type Props = { compact?: boolean; onDone?: () => void };
 
 export function VehicleSelector({ compact = false, onDone }: Props) {
+  const t = useT();
   const navigate = useNavigate();
   const { addVehicle } = useStore();
   const [year, setYear] = useState<number | null>(null);
@@ -23,14 +25,18 @@ export function VehicleSelector({ compact = false, onDone }: Props) {
     <div className={cn("space-y-4", compact ? "" : "card-surface p-5 sm:p-6")}>
       {!compact && (
         <div>
-          <p className="eyebrow text-primary">Grand Cherokee selector</p>
-          <h2 className="mt-1 text-2xl font-bold">Find parts that fit in 3 steps</h2>
+          <p className="eyebrow text-primary">
+            {t("Подбор по автомобилю", "Grand Cherokee selector")}
+          </p>
+          <h2 className="mt-1 text-2xl font-bold">
+            {t("Подберите запчасти за 3 шага", "Find parts that fit in 3 steps")}
+          </h2>
         </div>
       )}
 
-      <Step index={1} label="Select year" done={!!year}>
+      <Step index={1} label={t("Выберите год", "Select year")} done={!!year}>
         <select
-          aria-label="Select year"
+          aria-label={t("Выберите год", "Select year")}
           value={year ?? ""}
           onChange={(e) => {
             setYear(Number(e.target.value));
@@ -39,7 +45,7 @@ export function VehicleSelector({ compact = false, onDone }: Props) {
           }}
           className="h-12 w-full rounded-md border border-input bg-card px-3 text-base"
         >
-          <option value="">Choose a year</option>
+          <option value="">{t("Год выпуска", "Choose a year")}</option>
           {YEARS.map((y) => (
             <option key={y} value={y}>
               {y}
@@ -48,9 +54,9 @@ export function VehicleSelector({ compact = false, onDone }: Props) {
         </select>
       </Step>
 
-      <Step index={2} label="Select model / generation" done={!!gen}>
+      <Step index={2} label={t("Выберите поколение", "Select model / generation")} done={!!gen}>
         <select
-          aria-label="Select model or generation"
+          aria-label={t("Выберите поколение", "Select model or generation")}
           disabled={!year}
           value={gen ?? ""}
           onChange={(e) => {
@@ -59,7 +65,11 @@ export function VehicleSelector({ compact = false, onDone }: Props) {
           }}
           className="h-12 w-full rounded-md border border-input bg-card px-3 text-base disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground"
         >
-          <option value="">{year ? "Choose a generation" : "Select a year first"}</option>
+          <option value="">
+            {year
+              ? t("Поколение", "Choose a generation")
+              : t("Сначала выберите год", "Select a year first")}
+          </option>
           {gens.map((g) => (
             <option key={g.code} value={g.code}>
               {g.name}
@@ -68,15 +78,19 @@ export function VehicleSelector({ compact = false, onDone }: Props) {
         </select>
       </Step>
 
-      <Step index={3} label="Select engine" done={!!engine}>
+      <Step index={3} label={t("Выберите двигатель", "Select engine")} done={!!engine}>
         <select
-          aria-label="Select engine"
+          aria-label={t("Выберите двигатель", "Select engine")}
           disabled={!gen}
           value={engine ?? ""}
           onChange={(e) => setEngine(e.target.value)}
           className="h-12 w-full rounded-md border border-input bg-card px-3 text-base disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground"
         >
-          <option value="">{gen ? "Choose an engine" : "Select a generation first"}</option>
+          <option value="">
+            {gen
+              ? t("Двигатель", "Choose an engine")
+              : t("Сначала выберите поколение", "Select a generation first")}
+          </option>
           {engines.map((e) => (
             <option key={e} value={e}>
               {e}
@@ -91,13 +105,16 @@ export function VehicleSelector({ compact = false, onDone }: Props) {
         onClick={() => {
           if (!ready) return;
           addVehicle({ year: year!, gen: gen!, engine: engine! });
-          toast.success("Vehicle saved", { description: `${year} Grand Cherokee ${gen} · ${engine}` });
+          toast.success(t("Автомобиль сохранён", "Vehicle saved"), {
+            description: `${year} Grand Cherokee ${gen} · ${engine}`,
+          });
           onDone?.();
           navigate({ to: "/parts" });
         }}
         className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-md bg-accent px-4 text-base font-semibold text-accent-foreground transition-colors hover:brightness-95 disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground"
       >
-        Show compatible parts <ChevronRight className="size-4" aria-hidden="true" />
+        {t("Показать подходящие запчасти", "Show compatible parts")}{" "}
+        <ChevronRight className="size-4" aria-hidden="true" />
       </button>
     </div>
   );

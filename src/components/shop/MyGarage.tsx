@@ -1,9 +1,11 @@
 import { Link } from "@tanstack/react-router";
 import { Car, Check, Trash2 } from "lucide-react";
 import { useStore, vehicleLabel } from "@/lib/store";
+import { useT } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 
 export function MyGarage() {
+  const t = useT();
   const { vehicles, activeVehicleId, selectVehicle, removeVehicle, activeVehicle } = useStore();
 
   if (vehicles.length === 0) {
@@ -14,9 +16,12 @@ export function MyGarage() {
             <Car className="size-5" aria-hidden="true" />
           </span>
           <div>
-            <p className="font-semibold">My Grand Cherokee</p>
+            <p className="font-semibold">{t("Мой Grand Cherokee", "My Grand Cherokee")}</p>
             <p className="text-sm text-muted-foreground">
-              No vehicle saved yet — pick your year, generation and engine once and we filter everything for you.
+              {t(
+                "Автомобиль ещё не сохранён — выберите год, поколение и двигатель, и мы подберём всё для вас.",
+                "No vehicle saved yet — pick your year, generation and engine once and we filter everything for you.",
+              )}
             </p>
           </div>
         </div>
@@ -24,7 +29,7 @@ export function MyGarage() {
           to="/models"
           className="inline-flex h-10 items-center justify-center rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground"
         >
-          Select vehicle
+          {t("Выбрать автомобиль", "Select vehicle")}
         </Link>
       </div>
     );
@@ -33,9 +38,11 @@ export function MyGarage() {
   return (
     <div className="card-surface p-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 className="font-display text-lg font-bold uppercase tracking-wide">My Grand Cherokee</h2>
+        <h2 className="font-display text-lg font-bold uppercase tracking-wide">
+          {t("Мой Grand Cherokee", "My Grand Cherokee")}
+        </h2>
         <Link to="/models" className="text-sm font-semibold text-primary hover:underline">
-          Change vehicle
+          {t("Сменить автомобиль", "Change vehicle")}
         </Link>
       </div>
 
@@ -55,10 +62,11 @@ export function MyGarage() {
                 <p className="mt-0.5 text-xs font-medium text-muted-foreground">
                   {active ? (
                     <span className="inline-flex items-center gap-1 text-success">
-                      <Check className="size-3.5" aria-hidden="true" /> Vehicle selected
+                      <Check className="size-3.5" aria-hidden="true" />{" "}
+                      {t("Автомобиль выбран", "Vehicle selected")}
                     </span>
                   ) : (
-                    "Saved vehicle"
+                    t("Сохранённый автомобиль", "Saved vehicle")
                   )}
                 </p>
               </div>
@@ -69,13 +77,13 @@ export function MyGarage() {
                     onClick={() => selectVehicle(v.id)}
                     className="h-9 rounded-md border border-border px-3 text-sm font-medium hover:bg-secondary"
                   >
-                    Use
+                    {t("Выбрать", "Use")}
                   </button>
                 )}
                 <button
                   type="button"
                   onClick={() => removeVehicle(v.id)}
-                  aria-label={`Remove ${vehicleLabel(v)}`}
+                  aria-label={`${t("Удалить", "Remove")} ${vehicleLabel(v)}`}
                   className="inline-flex size-9 items-center justify-center rounded-md border border-border hover:bg-secondary"
                 >
                   <Trash2 className="size-4" aria-hidden="true" />
@@ -91,7 +99,7 @@ export function MyGarage() {
           to="/parts"
           className="mt-4 inline-flex h-11 items-center justify-center rounded-md bg-accent px-5 text-sm font-semibold text-accent-foreground"
         >
-          View parts for this vehicle
+          {t("Запчасти для этого автомобиля", "View parts for this vehicle")}
         </Link>
       ) : null}
     </div>

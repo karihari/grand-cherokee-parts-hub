@@ -1,27 +1,29 @@
 import { Link } from "@tanstack/react-router";
+import { useT } from "@/lib/i18n";
 import { Grid2x2, Home, Search, ShoppingCart, User } from "lucide-react";
 import { useStore } from "@/lib/store";
 
 export function MobileTabBar() {
+  const t = useT();
   const { cartCount } = useStore();
   return (
     <nav
-      aria-label="Mobile navigation"
+      aria-label={t("Навигация", "Mobile navigation")}
       className="fixed inset-x-0 bottom-0 z-40 grid grid-cols-5 border-t border-border bg-card md:hidden"
     >
-      <Tab to="/" label="Home" exact>
+      <Tab to="/" label={t("Главная", "Home")} exact>
         <Home className="size-5" aria-hidden="true" />
       </Tab>
-      <Tab to="/categories" label="Categories">
+      <Tab to="/categories" label={t("Категории", "Categories")}>
         <Grid2x2 className="size-5" aria-hidden="true" />
       </Tab>
-      <Tab to="/parts" label="Search">
+      <Tab to="/parts" label={t("Поиск", "Search")}>
         <Search className="size-5" aria-hidden="true" />
       </Tab>
-      <Tab to="/cart" label="Cart" badge={cartCount}>
+      <Tab to="/cart" label={t("Корзина", "Cart")} badge={cartCount}>
         <ShoppingCart className="size-5" aria-hidden="true" />
       </Tab>
-      <Tab to="/account" label="Account">
+      <Tab to="/account" label={t("Аккаунт", "Account")}>
         <User className="size-5" aria-hidden="true" />
       </Tab>
     </nav>
