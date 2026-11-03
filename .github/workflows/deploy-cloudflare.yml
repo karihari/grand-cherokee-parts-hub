@@ -1,10 +1,12 @@
 # Builds the shop and deploys it to the Cloudflare Worker karihari-grand-cherokee-parts-hub.
 # Needs one repository secret: CLOUDFLARE_API_TOKEN.
-# Started by hand (Actions → Deploy to Cloudflare → Run workflow) until the API is live;
-# then the push trigger below is enabled so every commit to main (including Lovable's) deploys.
+# Runs on every push to main (including Lovable's commits) and can be started by hand
+# (Actions → Deploy to Cloudflare → Run workflow).
 name: Deploy to Cloudflare
 
 on:
+  push:
+    branches: [main]
   workflow_dispatch:
 
 concurrency:
