@@ -15,6 +15,7 @@ const MESSAGES: Record<string, string> = {
   TOO_MANY_REQUESTS: "Too many attempts. Please wait a minute and try again.",
   ORIGIN_NOT_ALLOWED: "This website is not allowed to talk to the shop server.",
   ORDER_PRODUCT_UNAVAILABLE: "A part in your cart is no longer for sale. Please remove it.",
+  IMAGE_IN_USE: "A product still shows this photo.",
   ORDER_PRODUCT_NO_PRICE:
     "A part in your cart does not have a price yet. Message us or remove it from your cart.",
   ORDER_ALREADY_CANCELLED: "A cancelled order cannot be changed.",

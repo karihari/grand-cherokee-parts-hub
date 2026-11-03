@@ -84,9 +84,12 @@ function ProductPage() {
   const { product } = Route.useLoaderData();
   const { addToCart, toggleWishlist, wishlist, toggleCompare, trackView } = useStore();
   const [zoom, setZoom] = useState(false);
+  const [shown, setShown] = useState(0);
+  const photos = [product.image, ...(product.gallery ?? [])];
   const wished = wishlist.includes(product.id);
 
   useEffect(() => {
+    setShown(0);
     trackView(product.id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [product.id]);
@@ -118,7 +121,7 @@ function ProductPage() {
             className="card-surface block w-full overflow-hidden p-0"
           >
             <img
-              src={product.image}
+              src={photos[shown] ?? product.image}
               alt={productName(product, lang)}
               width={800}
               height={800}
@@ -128,22 +131,38 @@ function ProductPage() {
               )}
             />
           </button>
-          <div className="mt-3 flex gap-3">
-            {[0, 1, 2].map((i) => (
-              <img
-                key={i}
-                src={product.image}
-                alt={t(
-                  `${productName(product, lang)}, фото ${i + 1}`,
-                  `${productName(product, lang)} view ${i + 1}`,
-                )}
-                loading="lazy"
-                width={800}
-                height={800}
-                className="size-20 rounded-md border border-border object-cover"
-              />
-            ))}
-          </div>
+          {photos.length > 1 ? (
+            <div className="mt-3 flex flex-wrap gap-3">
+              {photos.map((src, i) => (
+                <button
+                  key={src}
+                  type="button"
+                  onClick={() => {
+                    setShown(i);
+                    setZoom(false);
+                  }}
+                  aria-label={t(
+                    `${productName(product, lang)}, фото ${i + 1}`,
+                    `${productName(product, lang)} view ${i + 1}`,
+                  )}
+                  aria-current={i === shown}
+                  className={cn(
+                    "overflow-hidden rounded-md border-2 p-0",
+                    i === shown ? "border-primary" : "border-border",
+                  )}
+                >
+                  <img
+                    src={src}
+                    alt=""
+                    loading="lazy"
+                    width={800}
+                    height={800}
+                    className="size-20 object-cover"
+                  />
+                </button>
+              ))}
+            </div>
+          ) : null}
         </div>
 
         <div>

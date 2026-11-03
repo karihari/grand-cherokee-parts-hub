@@ -1,7 +1,7 @@
-import { useState } from "react";
-import { Plus, Trash2 } from "lucide-react";
+import { useRef, useState } from "react";
+import { ImagePlus, Plus, Star, Trash2, X } from "lucide-react";
 import { CATEGORIES, GENERATIONS, PRODUCT_IMAGES, type Product } from "@/data/catalog";
-import { uploadProductImage, type ProductInput } from "@/lib/api/admin";
+import { deleteProductImage, uploadProductImage, type ProductInput } from "@/lib/api/admin";
 import { apiImageUrl, storedImagePath } from "@/lib/api/client";
 import { errorText } from "@/lib/api/errors";
 import { Panel } from "@/components/admin/ui";
@@ -18,15 +18,20 @@ type FormState = {
   price: string;
   oldPrice: string;
   stock: string;
+  // Stock picture, used only while the product has no photos of its own.
   imageKey: string;
-  imageUrl: string;
+  // Uploaded photos, cover first.
+  photos: string[];
   description: string;
   descriptionEn: string;
   featured: boolean;
   fits: FitRow[];
 };
 
-const CUSTOM_IMAGE = "__upload";
+// A cover plus up to ten more (the API allows ten in `gallery`).
+const MAX_PHOTOS = 11;
+
+const photoId = (url: string) => /\/images\/([a-f0-9]{32})$/.exec(url)?.[1];
 
 function imageKeyOf(url: string) {
   return Object.keys(PRODUCT_IMAGES).find((k) => PRODUCT_IMAGES[k] === url);
@@ -44,7 +49,7 @@ function initialState(product: Product | null): FormState {
       oldPrice: "",
       stock: "1",
       imageKey: "engine",
-      imageUrl: "",
+      photos: [],
       description: "",
       descriptionEn: "",
       featured: false,
@@ -52,6 +57,7 @@ function initialState(product: Product | null): FormState {
     };
   }
   const key = imageKeyOf(product.image);
+  const photos = [product.image, ...(product.gallery ?? [])].filter((url) => !imageKeyOf(url));
   return {
     name: product.name,
     nameEn: product.nameEn ?? "",
@@ -61,8 +67,8 @@ function initialState(product: Product | null): FormState {
     price: String(product.price),
     oldPrice: product.oldPrice != null ? String(product.oldPrice) : "",
     stock: String(product.stock),
-    imageKey: key ?? CUSTOM_IMAGE,
-    imageUrl: key ? "" : product.image,
+    imageKey: key ?? "engine",
+    photos,
     description: product.description,
     descriptionEn: product.descriptionEn ?? "",
     featured: product.featured ?? false,
@@ -85,7 +91,8 @@ function toInput(f: FormState): ProductInput {
     price: Number(f.price),
     oldPrice: f.oldPrice.trim() ? Number(f.oldPrice) : null,
     stock: Number(f.stock),
-    image: f.imageKey === CUSTOM_IMAGE ? storedImagePath(f.imageUrl) : f.imageKey,
+    image: f.photos.length ? storedImagePath(f.photos[0]!) : f.imageKey,
+    gallery: f.photos.slice(1).map(storedImagePath),
     description: f.description,
     descriptionEn: f.descriptionEn,
     featured: f.featured,
@@ -120,31 +127,61 @@ export function ProductForm({
 
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  // Photos uploaded while this form is open. If they are taken out again, or the form is
+  // cancelled, they are not on any product yet, so they are deleted from the bucket.
+  const fresh = useRef(new Set<string>());
 
-  async function upload(file: File) {
+  const dropFromBucket = (url: string) => {
+    const id = photoId(url);
+    if (id && fresh.current.delete(id)) void deleteProductImage(id).catch(() => undefined);
+  };
+
+  async function upload(files: File[]) {
+    const room = MAX_PHOTOS - f.photos.length;
+    if (room <= 0) return;
     setUploading(true);
     setUploadError(null);
+    // Photos that made it up before an error are kept, so a retry only needs the rest.
+    const added: string[] = [];
     try {
-      const { url } = await uploadProductImage(await resizeImage(file));
-      set({ imageUrl: apiImageUrl(url) });
+      for (const file of files.slice(0, room)) {
+        const { id, url } = await uploadProductImage(await resizeImage(file));
+        fresh.current.add(id);
+        added.push(apiImageUrl(url));
+      }
+      if (files.length > room) {
+        setUploadError(
+          t(`Можно не больше ${MAX_PHOTOS} фото`, `At most ${MAX_PHOTOS} photos per product`),
+        );
+      }
     } catch (err) {
       setUploadError(errorText(err));
     } finally {
+      if (added.length) setF((s) => ({ ...s, photos: [...s.photos, ...added] }));
       setUploading(false);
     }
   }
 
-  const previewSrc = f.imageKey === CUSTOM_IMAGE ? f.imageUrl : PRODUCT_IMAGES[f.imageKey];
+  const removePhoto = (i: number) => {
+    dropFromBucket(f.photos[i]!);
+    setF((s) => ({ ...s, photos: s.photos.filter((_, j) => j !== i) }));
+  };
+
+  const makeCover = (i: number) =>
+    setF((s) => ({ ...s, photos: [s.photos[i]!, ...s.photos.filter((_, j) => j !== i)] }));
+
+  const cancel = () => {
+    for (const id of [...fresh.current]) dropFromBucket(`/images/${id}`);
+    onCancel();
+  };
+
+  const stockSrc = PRODUCT_IMAGES[f.imageKey];
 
   return (
     <Panel className="mb-5 p-5">
       <form
         onSubmit={(e) => {
           e.preventDefault();
-          if (f.imageKey === CUSTOM_IMAGE && !f.imageUrl) {
-            setUploadError(t("Сначала выберите фото", "Choose a photo first"));
-            return;
-          }
           onSave(toInput(f));
         }}
       >
@@ -204,46 +241,92 @@ export function ProductForm({
             required
           />
           <SelectField
-            label={t("Фото", "Image")}
+            label={t("Стандартное фото", "Stock photo")}
             value={f.imageKey}
             onChange={(v) => set({ imageKey: v })}
-            options={[
-              ...Object.keys(PRODUCT_IMAGES).map((k): [string, string] => [
-                k,
-                `${t("Стандартное фото", "Stock photo")}: ${k}`,
-              ]),
-              [CUSTOM_IMAGE, t("Загрузить с компьютера", "Upload from computer")],
-            ]}
+            options={Object.keys(PRODUCT_IMAGES).map((k): [string, string] => [k, k])}
           />
-          {f.imageKey === CUSTOM_IMAGE ? (
-            <label className="block">
-              <span className="mb-1 block text-sm font-medium">{t("Файл фото", "Photo")}</span>
-              <input
-                type="file"
-                accept="image/*"
-                disabled={uploading}
-                onChange={(e) => {
-                  const file = e.target.files?.[0];
-                  if (file) void upload(file);
-                }}
-                className="block w-full text-sm file:mr-3 file:h-11 file:rounded-md file:border file:border-border file:bg-card file:px-4 file:text-sm file:font-medium"
-              />
-              <span className="mt-1 block text-xs text-muted-foreground">
-                {uploading
-                  ? t("Загрузка…", "Uploading…")
-                  : (uploadError ?? (f.imageUrl ? "" : t("Выберите фото", "Choose a photo")))}
-              </span>
-            </label>
-          ) : null}
-          {previewSrc ? (
+          {!f.photos.length && stockSrc ? (
             <img
-              src={previewSrc}
+              src={stockSrc}
               alt=""
               className="size-24 rounded-md border border-border object-cover"
             />
           ) : null}
         </div>
 
+        <fieldset className="mt-4 rounded-md border border-border p-4">
+          <legend className="px-1 text-sm font-bold uppercase">{t("Фото", "Photos")}</legend>
+          <p className="mb-3 text-xs text-muted-foreground">
+            {t(
+              "Первое фото — обложка в каталоге. Без своих фото показывается стандартное.",
+              "The first photo is the cover in the catalogue. Without photos of its own, the stock photo is shown.",
+            )}
+          </p>
+          <ul className="flex flex-wrap gap-3">
+            {f.photos.map((url, i) => (
+              <li key={url} className="w-28">
+                <div className="relative">
+                  <img
+                    src={url}
+                    alt=""
+                    className="size-28 rounded-md border border-border object-cover"
+                  />
+                  {i === 0 ? (
+                    <span className="absolute bottom-1 left-1 rounded bg-primary px-1.5 py-0.5 text-[10px] font-bold uppercase text-primary-foreground">
+                      {t("Обложка", "Cover")}
+                    </span>
+                  ) : null}
+                  <button
+                    type="button"
+                    onClick={() => removePhoto(i)}
+                    aria-label={t("Убрать фото", "Remove photo")}
+                    className="absolute right-1 top-1 inline-flex size-6 items-center justify-center rounded-full bg-background/90 text-foreground shadow hover:bg-destructive hover:text-destructive-foreground"
+                  >
+                    <X className="size-3.5" aria-hidden="true" />
+                  </button>
+                </div>
+                {i > 0 ? (
+                  <button
+                    type="button"
+                    onClick={() => makeCover(i)}
+                    className="mt-1 inline-flex w-full items-center justify-center gap-1 rounded-md border border-border px-1 py-1 text-xs hover:bg-secondary"
+                  >
+                    <Star className="size-3" aria-hidden="true" />
+                    {t("Сделать обложкой", "Make cover")}
+                  </button>
+                ) : null}
+              </li>
+            ))}
+            {f.photos.length < MAX_PHOTOS ? (
+              <li>
+                <label
+                  className={`flex size-28 cursor-pointer flex-col items-center justify-center gap-1 rounded-md border border-dashed border-border text-xs text-muted-foreground hover:bg-secondary ${uploading ? "pointer-events-none opacity-60" : ""}`}
+                >
+                  <ImagePlus className="size-5" aria-hidden="true" />
+                  {uploading ? t("Загрузка…", "Uploading…") : t("Добавить фото", "Add photos")}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    disabled={uploading}
+                    className="sr-only"
+                    onChange={(e) => {
+                      const files = Array.from(e.target.files ?? []);
+                      e.target.value = "";
+                      if (files.length) void upload(files);
+                    }}
+                  />
+                </label>
+              </li>
+            ) : null}
+          </ul>
+          {uploadError ? (
+            <p role="alert" className="mt-2 text-xs text-destructive">
+              {uploadError}
+            </p>
+          ) : null}
+        </fieldset>
         <fieldset className="mt-4 rounded-md border border-border p-4">
           <legend className="px-1 text-sm font-bold uppercase">
             {t("Совместимость", "Fitment")}
@@ -352,7 +435,7 @@ export function ProductForm({
           </button>
           <button
             type="button"
-            onClick={onCancel}
+            onClick={cancel}
             className="h-11 rounded-md border border-border px-5 text-sm font-semibold"
           >
             {t("Отмена", "Cancel")}

@@ -78,6 +78,7 @@ export type ProductInput = {
   oldPrice: number | null;
   stock: number;
   image: string;
+  gallery: string[];
   description: string;
   descriptionEn: string;
   fits: Fitment[];
@@ -98,6 +99,10 @@ export function uploadProductImage(image: Blob) {
   form.append("file", image, "photo.jpg");
   return api<{ id: string; url: string }>("/admin/images", { method: "POST", form });
 }
+
+// Removes an uploaded photo from the bucket; refused while a product still shows it.
+export const deleteProductImage = (id: string) =>
+  api<void>(`/admin/images/${id}`, { method: "DELETE" });
 
 // ---- Orders ----
 
