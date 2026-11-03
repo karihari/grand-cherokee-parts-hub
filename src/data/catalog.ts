@@ -203,6 +203,8 @@ export type Product = {
   rating: number;
   reviews: number;
   image: string;
+  // More photos after the cover, in display order.
+  gallery?: string[];
   description: string;
   descriptionEn?: string;
   fits: Fitment[];

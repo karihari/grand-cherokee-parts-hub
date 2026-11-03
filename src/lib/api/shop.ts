@@ -8,15 +8,17 @@ export type Paginated<T> = {
 };
 
 // The API returns null for "no old price"; the shop's Product type uses a missing field.
-type ApiProduct = Omit<Product, "oldPrice" | "featured"> & {
+type ApiProduct = Omit<Product, "oldPrice" | "featured" | "gallery"> & {
   oldPrice: number | null;
   featured: boolean;
+  gallery: string[];
   fits: Fitment[];
 };
 
 export function toProduct(p: ApiProduct): Product {
-  const { oldPrice, featured, ...rest } = p;
+  const { oldPrice, featured, gallery, ...rest } = p;
   const product: Product = { ...rest, image: productImageUrl(rest.image) };
+  if (gallery?.length) product.gallery = gallery.map(productImageUrl);
   if (oldPrice != null) product.oldPrice = oldPrice;
   if (featured) product.featured = true;
   return product;
