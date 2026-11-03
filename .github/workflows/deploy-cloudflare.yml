@@ -26,5 +26,19 @@ jobs:
       - uses: oven-sh/setup-bun@v2
       - run: bun install --frozen-lockfile
       - run: bun run build
+      # Server-side rendering calls the API Worker on the same workers.dev subdomain; Cloudflare
+      # blocks that (404) unless fetch goes out over the public internet.
+      - name: Allow calling the API Worker during SSR
+        run: |
+          node -e '
+            const fs = require("fs");
+            const file = ".output/server/wrangler.json";
+            const cfg = JSON.parse(fs.readFileSync(file, "utf8"));
+            const flags = new Set(cfg.compatibility_flags || []);
+            flags.add("global_fetch_strictly_public");
+            cfg.compatibility_flags = [...flags];
+            fs.writeFileSync(file, JSON.stringify(cfg, null, 2));
+            console.log("compatibility_flags:", cfg.compatibility_flags.join(", "));
+          '
       - name: Deploy
         run: npx --yes wrangler@4 deploy --name karihari-grand-cherokee-parts-hub
